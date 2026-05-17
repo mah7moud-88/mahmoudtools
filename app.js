@@ -54,7 +54,7 @@ Office.onReady(() => {
     };
 
     // ======================
-    // ⚡ Paste to Excel (FIXED)
+    // ⚡ Paste to Excel (Visible Only - Stable)
     // ======================
     document.getElementById("run").onclick = async () => {
 
@@ -86,18 +86,17 @@ Office.onReady(() => {
                 let col = selected.columnIndex;
 
                 let valueIndex = 0;
-                const total = values.length;
 
                 for (let i = 0; i < usedRange.rowCount; i++) {
 
-                    if (valueIndex >= total) break;
+                    if (valueIndex >= values.length) break;
 
                     const cell = sheet.getCell(startRow + i, col);
                     cell.load("rowHidden");
 
                     await context.sync();
 
-                    // ✔️ تجاهل الصفوف المخفية
+                    // ✔️ تجاهل الصفوف المخفية (Filter)
                     if (!cell.rowHidden) {
                         cell.values = [[values[valueIndex]]];
                         valueIndex++;
@@ -107,7 +106,7 @@ Office.onReady(() => {
                 await context.sync();
             });
 
-            status.innerText = "Done 🎉 (Visible only)";
+            status.innerText = "Done 🎉 (Clean + Stable)";
 
         } catch (err) {
             console.log(err);
