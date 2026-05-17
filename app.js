@@ -58,7 +58,7 @@ Office.onReady(() => {
     };
 
     // ======================
-    // ⚡ Paste to Excel (Visible Only + Progress)
+    // ⚡ Paste to Excel (Smooth Progress)
     // ======================
     document.getElementById("run").onclick = async () => {
 
@@ -109,10 +109,24 @@ Office.onReady(() => {
                         valueIndex++;
 
                         // ======================
-                        // 📊 Progress update
+                        // 📊 Smooth Progress (THIRD SPEED)
                         // ======================
                         let percent = Math.round((valueIndex / values.length) * 100);
-                        progressBar.style.width = percent + "%";
+
+                        let current = parseFloat(progressBar.style.width) || 0;
+                        let target = percent;
+
+                        const animate = () => {
+                            if (current < target) {
+                                current += 0.5; // ← أبطأ (ثلث السرعة تقريبًا)
+                                progressBar.style.width = current + "%";
+                                requestAnimationFrame(animate);
+                            } else {
+                                progressBar.style.width = target + "%";
+                            }
+                        };
+
+                        animate();
                     }
                 }
 
@@ -125,7 +139,7 @@ Office.onReady(() => {
                 progressBar.style.width = "100%";
             });
 
-            status.innerText = "Done 🎉 (Fully Working)";
+            status.innerText = "Done 🎉 (Smooth Progress)";
 
         } catch (err) {
             console.log(err);
