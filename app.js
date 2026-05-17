@@ -5,6 +5,7 @@ Office.onReady(() => {
     const dataBox = document.getElementById("dataBox");
     const status = document.getElementById("status");
     const countEl = document.getElementById("count");
+    const progressBar = document.getElementById("progressBar");
 
     // ======================
     // 📂 Upload Excel file
@@ -52,10 +53,12 @@ Office.onReady(() => {
     document.getElementById("clearBtn").onclick = () => {
         dataBox.value = "";
         status.innerText = "Cleared 🧹";
+        countEl.innerText = "0";
+        progressBar.style.width = "0%";
     };
 
     // ======================
-    // ⚡ Paste to Excel (Visible Only - Stable)
+    // ⚡ Paste to Excel (Visible Only + Progress)
     // ======================
     document.getElementById("run").onclick = async () => {
 
@@ -88,6 +91,9 @@ Office.onReady(() => {
 
                 let valueIndex = 0;
 
+                // Reset progress
+                progressBar.style.width = "0%";
+
                 for (let i = 0; i < usedRange.rowCount; i++) {
 
                     if (valueIndex >= values.length) break;
@@ -97,23 +103,29 @@ Office.onReady(() => {
 
                     await context.sync();
 
-                    // ✔️ تجاهل الصفوف المخفية (Filter)
+                    // ✔️ تجاهل الصفوف المخفية
                     if (!cell.rowHidden) {
                         cell.values = [[values[valueIndex]]];
                         valueIndex++;
+
+                        // ======================
+                        // 📊 Progress update
+                        // ======================
+                        let percent = Math.round((valueIndex / values.length) * 100);
+                        progressBar.style.width = percent + "%";
                     }
                 }
 
                 await context.sync();
 
                 // ======================
-                // ✔️ تحديث Total بعد الـ Paste فقط
+                // ✔️ Final UI update
                 // ======================
                 countEl.innerText = values.length;
-
+                progressBar.style.width = "100%";
             });
 
-            status.innerText = "Done 🎉 (Clean + Stable)";
+            status.innerText = "Done 🎉 (Fully Working)";
 
         } catch (err) {
             console.log(err);
