@@ -54,7 +54,7 @@ Office.onReady(() => {
     };
 
     // ======================
-    // ⚡ Paste to Excel
+    // ⚡ Paste to Excel (FIXED)
     // ======================
     document.getElementById("run").onclick = async () => {
 
@@ -74,23 +74,40 @@ Office.onReady(() => {
 
                 const sheet = context.workbook.worksheets.getActiveWorksheet();
 
-                // ✔️ التعديل المهم هنا
                 const selected = context.workbook.getSelectedRange();
                 selected.load("rowIndex, columnIndex");
 
+                const usedRange = sheet.getUsedRange();
+                usedRange.load("rowCount");
+
                 await context.sync();
 
-                let row = selected.rowIndex;
+                let startRow = selected.rowIndex;
                 let col = selected.columnIndex;
 
-                for (let i = 0; i < values.length; i++) {
-                    sheet.getCell(row + i, col).values = [[values[i]]];
+                let valueIndex = 0;
+                const total = values.length;
+
+                for (let i = 0; i < usedRange.rowCount; i++) {
+
+                    if (valueIndex >= total) break;
+
+                    const cell = sheet.getCell(startRow + i, col);
+                    cell.load("rowHidden");
+
+                    await context.sync();
+
+                    // ✔️ تجاهل الصفوف المخفية
+                    if (!cell.rowHidden) {
+                        cell.values = [[values[valueIndex]]];
+                        valueIndex++;
+                    }
                 }
 
                 await context.sync();
             });
 
-            status.innerText = "Done 🎉";
+            status.innerText = "Done 🎉 (Visible only)";
 
         } catch (err) {
             console.log(err);
