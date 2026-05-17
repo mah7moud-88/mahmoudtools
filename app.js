@@ -1,0 +1,100 @@
+Office.onReady(() => {
+
+    const uploadBtn = document.getElementById("uploadBtn");
+    const fileInput = document.getElementById("fileInput");
+    const dataBox = document.getElementById("dataBox");
+    const status = document.getElementById("status");
+
+    // ======================
+    // 📂 Upload Excel file
+    // ======================
+    uploadBtn.onclick = () => {
+        fileInput.value = "";
+        fileInput.click();
+    };
+
+    fileInput.onchange = (e) => {
+
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+
+        reader.onload = (event) => {
+
+            const data = new Uint8Array(event.target.result);
+            const workbook = XLSX.read(data, { type: "array" });
+
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+
+            const json = XLSX.utils.sheet_to_json(sheet, {
+                header: 1,
+                defval: ""
+            });
+
+            const cleaned = json
+                .flat()
+                .map(v => String(v).trim())
+                .filter(v => v !== "");
+
+            dataBox.value = cleaned.join("\n");
+
+            status.innerText = "Loaded ✅";
+        };
+
+        reader.readAsArrayBuffer(file);
+    };
+
+    // ======================
+    // 🧹 Clear
+    // ======================
+    document.getElementById("clearBtn").onclick = () => {
+        dataBox.value = "";
+        status.innerText = "Cleared 🧹";
+    };
+
+    // ======================
+    // ⚡ Paste to Excel
+    // ======================
+    document.getElementById("run").onclick = async () => {
+
+        const values = dataBox.value
+            .split("\n")
+            .map(v => v.trim())
+            .filter(v => v);
+
+        if (!values.length) {
+            alert("اكتب أو ارفع بيانات");
+            return;
+        }
+
+        try {
+
+            await Excel.run(async (context) => {
+
+                const sheet = context.workbook.worksheets.getActiveWorksheet();
+
+                const cell = sheet.getActiveCell();
+                cell.load("rowIndex, columnIndex");
+
+                await context.sync();
+
+                let row = cell.rowIndex;
+                let col = cell.columnIndex;
+
+                for (let i = 0; i < values.length; i++) {
+                    sheet.getCell(row + i, col).values = [[values[i]]];
+                }
+
+                await context.sync();
+            });
+
+            status.innerText = "Done 🎉";
+
+        } catch (err) {
+            console.log(err);
+            status.innerText = "Error ❌ " + err.message;
+        }
+    };
+
+});
