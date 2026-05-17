@@ -74,13 +74,14 @@ Office.onReady(() => {
 
                 const sheet = context.workbook.worksheets.getActiveWorksheet();
 
-                const cell = sheet.getActiveCell();
-                cell.load("rowIndex, columnIndex");
+                // ✔️ التعديل المهم هنا
+                const selected = context.workbook.getSelectedRange();
+                selected.load("rowIndex, columnIndex");
 
                 await context.sync();
 
-                let row = cell.rowIndex;
-                let col = cell.columnIndex;
+                let row = selected.rowIndex;
+                let col = selected.columnIndex;
 
                 for (let i = 0; i < values.length; i++) {
                     sheet.getCell(row + i, col).values = [[values[i]]];
