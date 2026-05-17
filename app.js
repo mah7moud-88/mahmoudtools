@@ -4,6 +4,7 @@ Office.onReady(() => {
     const fileInput = document.getElementById("fileInput");
     const dataBox = document.getElementById("dataBox");
     const status = document.getElementById("status");
+    const countEl = document.getElementById("count");
 
     // ======================
     // 📂 Upload Excel file
@@ -104,6 +105,12 @@ Office.onReady(() => {
                 }
 
                 await context.sync();
+
+                // ======================
+                // ✔️ تحديث Total بعد الـ Paste فقط
+                // ======================
+                countEl.innerText = values.length;
+
             });
 
             status.innerText = "Done 🎉 (Clean + Stable)";
