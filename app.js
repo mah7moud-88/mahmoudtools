@@ -11,32 +11,39 @@ Office.onReady(() => {
     // 📂 Upload Excel File
     // ======================
     uploadBtn.onclick = () => {
+
         fileInput.value = "";
+
         fileInput.click();
     };
 
     fileInput.onchange = (e) => {
 
         const file = e.target.files[0];
+
         if (!file) return;
 
         const reader = new FileReader();
 
         reader.onload = (event) => {
 
-            const data = new Uint8Array(event.target.result);
+            const data =
+                new Uint8Array(event.target.result);
 
             const workbook = XLSX.read(data, {
                 type: "array"
             });
 
             const sheet =
-                workbook.Sheets[workbook.SheetNames[0]];
+                workbook.Sheets[
+                    workbook.SheetNames[0]
+                ];
 
-            const json = XLSX.utils.sheet_to_json(sheet, {
-                header: 1,
-                defval: ""
-            });
+            const json =
+                XLSX.utils.sheet_to_json(sheet, {
+                    header: 1,
+                    defval: ""
+                });
 
             const cleaned = json
                 .flat()
@@ -76,7 +83,9 @@ Office.onReady(() => {
             .filter(v => v);
 
         if (!values.length) {
+
             alert("اكتب أو ارفع بيانات");
+
             return;
         }
 
@@ -89,81 +98,114 @@ Office.onReady(() => {
             await Excel.run(async (context) => {
 
                 const sheet =
-                    context.workbook.worksheets.getActiveWorksheet();
+                    context.workbook
+                        .worksheets
+                        .getActiveWorksheet();
 
                 const selected =
-                    context.workbook.getSelectedRange();
+                    context.workbook
+                        .getSelectedRange();
 
-                selected.load("rowIndex,columnIndex");
+                selected.load(
+                    "rowIndex,columnIndex"
+                );
 
-                const usedRange = sheet.getUsedRange();
+                const usedRange =
+                    sheet.getUsedRange();
 
                 usedRange.load("rowCount");
 
                 await context.sync();
 
-                const startRow = selected.rowIndex;
-                const col = selected.columnIndex;
+                const startRow =
+                    selected.rowIndex;
+
+                const col =
+                    selected.columnIndex;
 
                 // ======================
-                // Load rows visibility once
+                // تجهيز الصفوف
                 // ======================
-                const scanRange = sheet.getRangeByIndexes(
-                    startRow,
-                    col,
-                    usedRange.rowCount,
-                    1
-                );
 
-                scanRange.load("rowHidden");
-
-                await context.sync();
-
-                // ======================
-                // Collect visible cells only
-                // ======================
-                const visibleCells = [];
+                const rowsData = [];
 
                 for (let i = 0; i < usedRange.rowCount; i++) {
 
-                    const cell = scanRange.getCell(i, 0);
+                    const rowRange =
+                        sheet.getRangeByIndexes(
+                            startRow + i,
+                            col,
+                            1,
+                            1
+                        );
 
-                    if (!cell.rowHidden) {
-                        visibleCells.push(cell);
-                    }
+                    const entireRow =
+                        rowRange.getEntireRow();
 
-                    if (visibleCells.length >= values.length) {
-                        break;
-                    }
+                    entireRow.load("hidden");
+
+                    rowsData.push({
+                        row: startRow + i,
+                        rowObj: entireRow
+                    });
                 }
 
-                // ======================
-                // Write values
-                // ======================
-                for (let i = 0; i < values.length; i++) {
-
-                    if (!visibleCells[i]) break;
-
-                    visibleCells[i].values = [[values[i]]];
-
-                    // Progress
-                    const percent =
-                        Math.round(((i + 1) / values.length) * 100);
-
-                    progressBar.style.width = percent + "%";
-                }
-
-                // ======================
-                // Single sync only
-                // ======================
+                // تحميل hidden مرة واحدة
                 await context.sync();
 
                 // ======================
-                // Final UI
+                // لصق القيم
                 // ======================
-                countEl.innerText = values.length;
 
-                progressBar.style.width = "100%";
+                let valueIndex = 0;
+
+                for (let i = 0; i < rowsData.length; i++) {
+
+                    if (valueIndex >= values.length) {
+                        break;
+                    }
+
+                    const rowData =
+                        rowsData[i];
+
+                    // تجاهل الصفوف المخفية
+                    if (!rowData.rowObj.hidden) {
+
+                        const targetCell =
+                            sheet.getCell(
+                                rowData.row,
+                                col
+                            );
+
+                        targetCell.values = [
+                            [values[valueIndex]]
+                        ];
+
+                        valueIndex++;
+
+                        // Progress
+                        const percent =
+                            Math.round(
+                                (valueIndex / values.length) * 100
+                            );
+
+                        progressBar.style.width =
+                            percent + "%";
+                    }
+                }
+
+                // تنفيذ الكتابة مرة واحدة
+                await context.sync();
+
+                // ======================
+                // UI
+                // ======================
+
+                countEl.innerText =
+                    valueIndex;
+
+                progressBar.style.width =
+                    "100%";
 
                 status.innerText =
                     "Done 🚀 (Visible Rows Only)";
