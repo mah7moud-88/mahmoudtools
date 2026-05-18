@@ -52,6 +52,15 @@
             box-sizing: border-box;
         }
 
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            margin-top: 10px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            box-sizing: border-box;
+        }
+
         .row {
             display: flex;
             gap: 10px;
@@ -116,6 +125,10 @@
 
         <textarea id="dataBox" placeholder="✍️ الصق أو ارفع ملف Excel هنا..."></textarea>
 
+        <!-- Repeat Box -->
+        <input id="repeatCount" type="number" min="0" value="0"
+            placeholder="Repeat count (0 = normal paste)">
+
         <div class="row">
             <button id="uploadBtn" class="action upload-btn">📂 Upload</button>
             <button id="clearBtn" class="action clear-btn">🧹 Clear</button>
@@ -132,7 +145,7 @@
         </div>
 
         <div class="count">📊 Total: <span id="count">0</span></div>
-        <div class="count">📥 Count: <span id="liveCount">0</span></div>
+        <div class="count">📥 Live Count: <span id="liveCount">0</span></div>
 
     </div>
 

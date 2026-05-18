@@ -3,6 +3,7 @@ Office.onReady(() => {
     const uploadBtn = document.getElementById("uploadBtn");
     const fileInput = document.getElementById("fileInput");
     const dataBox = document.getElementById("dataBox");
+    const repeatCountEl = document.getElementById("repeatCount");
     const status = document.getElementById("status");
     const countEl = document.getElementById("count");
     const liveCountEl = document.getElementById("liveCount");
@@ -11,7 +12,7 @@ Office.onReady(() => {
     let stopRequested = false;
 
     // ======================
-    // Live Count Function
+    // Live Count
     // ======================
     function updateLiveCount() {
 
@@ -26,10 +27,9 @@ Office.onReady(() => {
     dataBox.addEventListener("input", updateLiveCount);
 
     // ======================
-    // Upload Excel File
+    // Upload
     // ======================
     uploadBtn.onclick = () => {
-
         fileInput.value = "";
         fileInput.click();
     };
@@ -44,7 +44,6 @@ Office.onReady(() => {
         reader.onload = (event) => {
 
             const data = new Uint8Array(event.target.result);
-
             const workbook = XLSX.read(data, { type: "array" });
 
             const sheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -78,11 +77,11 @@ Office.onReady(() => {
 
         updateLiveCount();
 
-        status.innerText = "Cleared 🧹";
-
         countEl.innerText = "0";
 
         progressBar.style.width = "0%";
+
+        status.innerText = "Cleared 🧹";
     };
 
     // ======================
@@ -96,16 +95,38 @@ Office.onReady(() => {
     };
 
     // ======================
-    // Paste To Excel
+    // Paste
     // ======================
     document.getElementById("run").onclick = async () => {
 
-        const values = dataBox.value
+        const repeatTimes = parseInt(repeatCountEl.value || "0");
+
+        const baseValues = dataBox.value
             .split("\n")
             .map(v => v.trim())
             .filter(v => v !== "");
 
         updateLiveCount();
+
+        let values = [];
+
+        // ======================
+        // Repeat Logic
+        // ======================
+        if (repeatTimes <= 0) {
+
+            values = baseValues;
+
+        } else {
+
+            for (const v of baseValues) {
+
+                for (let i = 0; i < repeatTimes; i++) {
+
+                    values.push(v);
+                }
+            }
+        }
 
         if (!values.length) {
             alert("اكتب أو ارفع بيانات");
