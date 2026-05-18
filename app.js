@@ -110,11 +110,6 @@ Office.onReady(() => {
                     "rowIndex,columnIndex"
                 );
 
-                const usedRange =
-                    sheet.getUsedRange();
-
-                usedRange.load("rowCount");
-
                 await context.sync();
 
                 const startRow =
@@ -124,60 +119,45 @@ Office.onReady(() => {
                     selected.columnIndex;
 
                 // ======================
-                // تجهيز الصفوف
+                // نطاق البحث
                 // ======================
+                const scanRange =
+                    sheet.getRangeByIndexes(
+                        startRow,
+                        col,
+                        100000,
+                        1
+                    );
 
-                const rowsData = [];
+                // الصفوف الظاهرة فقط
+                const visibleRange =
+                    scanRange.getSpecialCells(
+                        Excel.SpecialCellType.visible
+                    );
 
-                for (let i = 0; i < usedRange.rowCount; i++) {
+                visibleRange.load(
+                    "areas/items/rowCount"
+                );
 
-                    const rowRange =
-                        sheet.getRangeByIndexes(
-                            startRow + i,
-                            col,
-                            1,
-                            1
-                        );
-
-                    const entireRow =
-                        rowRange.getEntireRow();
-
-                    entireRow.load("hidden");
-
-                    rowsData.push({
-                        row: startRow + i,
-                        rowObj: entireRow
-                    });
-                }
-
-                // تحميل hidden مرة واحدة
                 await context.sync();
-
-                // ======================
-                // لصق القيم
-                // ======================
 
                 let valueIndex = 0;
 
-                for (let i = 0; i < rowsData.length; i++) {
+                // ======================
+                // كتابة البيانات
+                // ======================
+                for (const area of visibleRange.areas.items) {
 
-                    if (valueIndex >= values.length) {
-                        break;
-                    }
+                    for (let r = 0; r < area.rowCount; r++) {
 
-                    const rowData =
-                        rowsData[i];
+                        if (valueIndex >= values.length) {
+                            break;
+                        }
 
-                    // تجاهل الصفوف المخفية
-                    if (!rowData.rowObj.hidden) {
+                        const cell =
+                            area.getCell(r, 0);
 
-                        const targetCell =
-                            sheet.getCell(
-                                rowData.row,
-                                col
-                            );
-
-                        targetCell.values = [
+                        cell.values = [
                             [values[valueIndex]]
                         ];
 
@@ -194,13 +174,12 @@ Office.onReady(() => {
                     }
                 }
 
-                // تنفيذ الكتابة مرة واحدة
+                // تنفيذ مرة واحدة
                 await context.sync();
 
                 // ======================
-                // UI
+                // Final UI
                 // ======================
-
                 countEl.innerText =
                     valueIndex;
 
