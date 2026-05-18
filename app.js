@@ -5,9 +5,25 @@ Office.onReady(() => {
     const dataBox = document.getElementById("dataBox");
     const status = document.getElementById("status");
     const countEl = document.getElementById("count");
+    const liveCountEl = document.getElementById("liveCount");
     const progressBar = document.getElementById("progressBar");
 
     let stopRequested = false;
+
+    // ======================
+    // Live Count Function
+    // ======================
+    function updateLiveCount() {
+
+        const values = dataBox.value
+            .split("\n")
+            .map(v => v.trim())
+            .filter(v => v !== "");
+
+        liveCountEl.innerText = values.length;
+    }
+
+    dataBox.addEventListener("input", updateLiveCount);
 
     // ======================
     // Upload Excel File
@@ -45,6 +61,8 @@ Office.onReady(() => {
 
             dataBox.value = cleaned.join("\n");
 
+            updateLiveCount();
+
             status.innerText = "Loaded ✅";
         };
 
@@ -57,29 +75,37 @@ Office.onReady(() => {
     document.getElementById("clearBtn").onclick = () => {
 
         dataBox.value = "";
+
+        updateLiveCount();
+
         status.innerText = "Cleared 🧹";
+
         countEl.innerText = "0";
+
         progressBar.style.width = "0%";
     };
 
     // ======================
-    // Stop Button
+    // Stop
     // ======================
     document.getElementById("stopBtn").onclick = () => {
 
         stopRequested = true;
+
         status.innerText = "⛔ Stopping...";
     };
 
     // ======================
-    // Paste To Visible Rows Only
+    // Paste To Excel
     // ======================
     document.getElementById("run").onclick = async () => {
 
         const values = dataBox.value
             .split("\n")
             .map(v => v.trim())
-            .filter(v => v);
+            .filter(v => v !== "");
+
+        updateLiveCount();
 
         if (!values.length) {
             alert("اكتب أو ارفع بيانات");
