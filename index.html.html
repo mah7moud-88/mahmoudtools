@@ -68,6 +68,7 @@
             display: flex;
             gap: 10px;
             margin-top: 12px;
+            flex-wrap: wrap;
         }
 
         button.action {
@@ -83,6 +84,7 @@
         .upload-btn { background: #2563eb; }
         .clear-btn { background: #ef4444; }
         .paste-btn { background: #16a34a; }
+        .stop-btn { background: #f59e0b; }
 
         .status {
             margin-top: 10px;
@@ -111,47 +113,43 @@
             background: linear-gradient(90deg, #16a34a, #22c55e);
             transition: width 0.2s ease;
         }
-
-        .collapsed .content {
-            display: none;
-        }
     </style>
-
 </head>
 
 <body>
 
-    <div class="card" id="card">
+<div class="card">
 
-        <div class="topbar">
-            <h2>📊 Excel Paste Pro ⚡</h2>
-            <button class="toggle-btn" id="toggle">−</button>
+    <div class="topbar">
+        <h2>📊 Excel Paste Pro ⚡</h2>
+    </div>
+
+    <div class="content">
+
+        <textarea id="dataBox" placeholder="✍️ الصق أو ارفع ملف Excel هنا..."></textarea>
+
+        <div class="row">
+            <button id="uploadBtn" class="action upload-btn">📂 Upload</button>
+            <button id="clearBtn" class="action clear-btn">🧹 Clear</button>
+            <button id="run" class="action paste-btn">🚀 Paste</button>
+            <button id="stopBtn" class="action stop-btn">⛔ Stop</button>
         </div>
 
-        <div class="content">
+        <input type="file" id="fileInput" accept=".xlsx,.xls" hidden />
 
-            <textarea id="dataBox" placeholder="✍️ الصق أو ارفع ملف Excel هنا..."></textarea>
+        <div class="status" id="status">🟢 Ready</div>
 
-            <div class="row">
-                <button id="uploadBtn" class="action upload-btn">📂 Upload</button>
-                <button id="clearBtn" class="action clear-btn">🧹 Clear</button>
-                <button id="run" class="action paste-btn">🚀 Paste</button>
-            </div>
-
-            <input type="file" id="fileInput" accept=".xlsx,.xls" hidden />
-
-            <div class="status" id="status">🟢 Ready</div>
-
-            <div class="progress-container">
-                <div class="progress-bar" id="progressBar"></div>
-            </div>
-
-            <div class="count">📊 Total: <span id="count">0</span></div>
-
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar"></div>
         </div>
+
+        <div class="count">📊 Total: <span id="count">0</span></div>
 
     </div>
-<script src="app.js"></script>
-</body>
 
+</div>
+
+<script src="app.js"></script>
+
+</body>
 </html>

@@ -7,43 +7,36 @@ Office.onReady(() => {
     const countEl = document.getElementById("count");
     const progressBar = document.getElementById("progressBar");
 
+    let stopRequested = false;
+
     // ======================
-    // 📂 Upload Excel File
+    // Upload Excel File
     // ======================
     uploadBtn.onclick = () => {
 
         fileInput.value = "";
-
         fileInput.click();
     };
 
     fileInput.onchange = (e) => {
 
         const file = e.target.files[0];
-
         if (!file) return;
 
         const reader = new FileReader();
 
         reader.onload = (event) => {
 
-            const data =
-                new Uint8Array(event.target.result);
+            const data = new Uint8Array(event.target.result);
 
-            const workbook = XLSX.read(data, {
-                type: "array"
+            const workbook = XLSX.read(data, { type: "array" });
+
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+
+            const json = XLSX.utils.sheet_to_json(sheet, {
+                header: 1,
+                defval: ""
             });
-
-            const sheet =
-                workbook.Sheets[
-                    workbook.SheetNames[0]
-                ];
-
-            const json =
-                XLSX.utils.sheet_to_json(sheet, {
-                    header: 1,
-                    defval: ""
-                });
 
             const cleaned = json
                 .flat()
@@ -59,21 +52,27 @@ Office.onReady(() => {
     };
 
     // ======================
-    // 🧹 Clear
+    // Clear
     // ======================
     document.getElementById("clearBtn").onclick = () => {
 
         dataBox.value = "";
-
         status.innerText = "Cleared 🧹";
-
         countEl.innerText = "0";
-
         progressBar.style.width = "0%";
     };
 
     // ======================
-    // ⚡ Paste To Visible Rows Only
+    // Stop Button
+    // ======================
+    document.getElementById("stopBtn").onclick = () => {
+
+        stopRequested = true;
+        status.innerText = "⛔ Stopping...";
+    };
+
+    // ======================
+    // Paste To Visible Rows Only
     // ======================
     document.getElementById("run").onclick = async () => {
 
@@ -83,119 +82,87 @@ Office.onReady(() => {
             .filter(v => v);
 
         if (!values.length) {
-
             alert("اكتب أو ارفع بيانات");
-
             return;
         }
 
+        stopRequested = false;
+        progressBar.style.width = "0%";
+        status.innerText = "Processing... ⏳";
+
         try {
-
-            status.innerText = "Processing... ⏳";
-
-            progressBar.style.width = "0%";
 
             await Excel.run(async (context) => {
 
-                const sheet =
-                    context.workbook
-                        .worksheets
-                        .getActiveWorksheet();
+                const sheet = context.workbook.worksheets.getActiveWorksheet();
 
-                const selected =
-                    context.workbook
-                        .getSelectedRange();
-
-                selected.load(
-                    "rowIndex,columnIndex"
-                );
+                const selected = context.workbook.getSelectedRange();
+                selected.load("rowIndex,columnIndex");
 
                 await context.sync();
 
-                const startRow =
-                    selected.rowIndex;
+                const startRow = selected.rowIndex;
+                const col = selected.columnIndex;
 
-                const col =
-                    selected.columnIndex;
-
-                // ======================
-                // نطاق البحث
-                // ======================
-                const scanRange =
-                    sheet.getRangeByIndexes(
-                        startRow,
-                        col,
-                        100000,
-                        1
-                    );
-
-                // الصفوف الظاهرة فقط
-                const visibleRange =
-                    scanRange.getSpecialCells(
-                        Excel.SpecialCellType.visible
-                    );
-
-                visibleRange.load(
-                    "areas/items/rowCount"
+                const scanRange = sheet.getRangeByIndexes(
+                    startRow,
+                    col,
+                    100000,
+                    1
                 );
+
+                const visibleRange = scanRange.getSpecialCells(
+                    Excel.SpecialCellType.visible
+                );
+
+                visibleRange.load("areas/items/rowCount");
 
                 await context.sync();
 
                 let valueIndex = 0;
 
-                // ======================
-                // كتابة البيانات
-                // ======================
                 for (const area of visibleRange.areas.items) {
 
                     for (let r = 0; r < area.rowCount; r++) {
 
-                        if (valueIndex >= values.length) {
+                        if (stopRequested) {
+                            status.innerText = "⛔ Stopped";
                             break;
                         }
 
-                        const cell =
-                            area.getCell(r, 0);
+                        if (valueIndex >= values.length) break;
 
-                        cell.values = [
-                            [values[valueIndex]]
-                        ];
+                        const cell = area.getCell(r, 0);
+
+                        cell.values = [[values[valueIndex]]];
 
                         valueIndex++;
 
-                        // Progress
-                        const percent =
-                            Math.round(
-                                (valueIndex / values.length) * 100
-                            );
+                        const percent = Math.round((valueIndex / values.length) * 100);
 
-                        progressBar.style.width =
-                            percent + "%";
+                        progressBar.style.width = percent + "%";
                     }
+
+                    if (stopRequested) break;
                 }
 
-                // تنفيذ مرة واحدة
                 await context.sync();
 
-                // ======================
-                // Final UI
-                // ======================
-                countEl.innerText =
-                    valueIndex;
+                countEl.innerText = valueIndex;
 
-                progressBar.style.width =
-                    "100%";
+                progressBar.style.width = "100%";
 
-                status.innerText =
-                    "Done 🚀 (Visible Rows Only)";
+                if (!stopRequested) {
+                    status.innerText = "Done 🚀";
+                }
+
             });
 
         } catch (err) {
 
             console.log(err);
 
-            status.innerText =
-                "Error ❌ " + err.message;
+            status.innerText = "Error ❌ " + err.message;
         }
     };
 
