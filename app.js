@@ -149,7 +149,6 @@ const sheet = context.workbook.worksheets.getActiveWorksheet();
 
 const selected = context.workbook.getSelectedRange();
 selected.load("rowIndex,columnIndex");
-
 await context.sync();
 
 const startRow = selected.rowIndex;
@@ -160,7 +159,6 @@ const range = sheet.getRangeByIndexes(startRow, col, 100000, 1);
 const visible = range.getSpecialCells(Excel.SpecialCellType.visible);
 
 visible.load("areas/items/rowCount");
-
 await context.sync();
 
 let i = 0;
@@ -206,7 +204,6 @@ await Excel.run(async (context) => {
 
 const range = context.workbook.getSelectedRange();
 range.load("values");
-
 await context.sync();
 
 const excel = (range.values || []).flat().filter(v => v !== "");
@@ -222,12 +219,12 @@ setStatus("Check Error ❌ " + err.message);
 
 };
 
-/* ================= REPORT (VISIBLE ONLY FIXED) ================= */
+/* ================= REPORT (FIXED VISIBLES) ================= */
 reportBtn.onclick = async () => {
 
 try {
 
-setStatus("Generating Visible Report... 📊");
+setStatus("Generating Report... 📊");
 
 await Excel.run(async (context) => {
 
@@ -235,16 +232,18 @@ const sheet = context.workbook.worksheets.getActiveWorksheet();
 
 const usedRange = sheet.getUsedRange();
 
-// visible only
+// 👇 important: visible only
 const visible = usedRange.getSpecialCells(Excel.SpecialCellType.visible);
 
-visible.load("areas/items");
-
+visible.load("areas/items/rowCount");
 await context.sync();
 
 let report = [["Account", "Value"]];
 
 for (const area of visible.areas.items) {
+
+area.load("values");
+await context.sync();
 
 const vals = area.values;
 
@@ -265,7 +264,7 @@ report.push([col1, col2]);
 }
 
 if (report.length === 1) {
-setStatus("❌ No visible rows found");
+setStatus("❌ No visible data found");
 return;
 }
 
@@ -276,11 +275,12 @@ XLSX.utils.book_append_sheet(wb, ws, "Report");
 
 XLSX.writeFile(wb, "report.xlsx");
 
-setStatus("Report (Visible Only) downloaded ✅");
+setStatus("Report downloaded ✅");
 
 });
 
 } catch (err) {
+console.log(err);
 setStatus("Report Error ❌ " + err.message);
 }
 
