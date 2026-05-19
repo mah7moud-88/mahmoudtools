@@ -172,7 +172,7 @@ for (let r = 0; r < area.rowCount; r++) {
 if (stopRequested) break;
 if (i >= values.length) break;
 
-area.getCell(r, 0).values = [[values[i++]]];
+area.getCell(r,0).values = [[values[i++]]];
 
 let percent = Math.round((i / values.length) * 100);
 progressBar.style.width = percent + "%";
@@ -191,7 +191,6 @@ stopTimer();
 });
 
 } catch (err) {
-console.log(err);
 setStatus("Error ❌ " + err.message);
 stopTimer();
 }
@@ -223,39 +222,51 @@ setStatus("Check Error ❌ " + err.message);
 
 };
 
-/* ================= REPORT (FIXED FINAL) ================= */
+/* ================= REPORT (VISIBLE ONLY FIXED) ================= */
 reportBtn.onclick = async () => {
 
 try {
 
-setStatus("Generating Report... 📊");
+setStatus("Generating Visible Report... 📊");
 
 await Excel.run(async (context) => {
 
-const range = context.workbook.getSelectedRange();
-range.load("values,rowCount,columnCount");
+const sheet = context.workbook.worksheets.getActiveWorksheet();
+
+const usedRange = sheet.getUsedRange();
+
+// visible only
+const visible = usedRange.getSpecialCells(Excel.SpecialCellType.visible);
+
+visible.load("areas/items");
 
 await context.sync();
 
-if (range.columnCount < 2) {
-setStatus("❌ Select 2 columns");
-return;
-}
-
-const data = range.values || [];
-
 let report = [["Account", "Value"]];
 
-for (let i = 0; i < data.length; i++) {
+for (const area of visible.areas.items) {
 
-const row = data[i];
+const vals = area.values;
+
+for (let i = 0; i < vals.length; i++) {
+
+const row = vals[i];
 
 if (!row || row.length < 2) continue;
 
 const col1 = row[0] ?? "";
 const col2 = row[1] ?? "";
 
+if (col1 === "" && col2 === "") continue;
+
 report.push([col1, col2]);
+}
+
+}
+
+if (report.length === 1) {
+setStatus("❌ No visible rows found");
+return;
 }
 
 const wb = XLSX.utils.book_new();
@@ -265,12 +276,11 @@ XLSX.utils.book_append_sheet(wb, ws, "Report");
 
 XLSX.writeFile(wb, "report.xlsx");
 
-setStatus("Report downloaded ✅");
+setStatus("Report (Visible Only) downloaded ✅");
 
 });
 
 } catch (err) {
-console.log(err);
 setStatus("Report Error ❌ " + err.message);
 }
 
