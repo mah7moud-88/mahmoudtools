@@ -22,7 +22,7 @@ let timerInterval = null;
 function startTimer() {
 startTime = Date.now();
 timerInterval = setInterval(() => {
-timeDash.innerText = Math.floor((Date.now() - startTime)/1000) + "s";
+timeDash.innerText = Math.floor((Date.now() - startTime) / 1000) + "s";
 }, 500);
 }
 
@@ -90,7 +90,7 @@ status.innerText = "Stopped ⛔";
 stopTimer();
 };
 
-/* PASTE (FIXED + STABLE) */
+/* PASTE - FIXED LIVE PROGRESS */
 document.getElementById("run").onclick = async () => {
 
 const repeatTimes = parseInt(repeatCountEl.value || "0");
@@ -115,9 +115,12 @@ if (!values.length) return alert("اكتب أو ارفع بيانات");
 
 stopRequested = false;
 
+let total = values.length;
+let done = 0;
+
 progressBar.style.width = "0%";
-loadedCount.innerText = values.length;
-totalDash.innerText = values.length;
+loadedCount.innerText = total;
+totalDash.innerText = total;
 progressDash.innerText = "0%";
 
 status.innerText = "Processing ⚡";
@@ -137,21 +140,31 @@ await context.sync();
 const startRow = selected.rowIndex;
 const col = selected.columnIndex;
 
-const targetRange = sheet.getRangeByIndexes(
-startRow,
-col,
-values.length,
-1
-);
+/* 🔥 LIVE LOOP (IMPORTANT FIX) */
+for (let i = 0; i < total; i++) {
 
-targetRange.values = values.map(v => [v]);
+if (stopRequested) break;
 
+const cell = sheet.getCell(startRow + i, col);
+cell.values = [[values[i]]];
+
+done++;
+
+let percent = Math.round((done / total) * 100);
+
+progressBar.style.width = percent + "%";
+progressDash.innerText = percent + "%";
+status.innerText = `Processing ⚡ ${done}/${total}`;
+
+}
+
+/* commit changes */
 await context.sync();
 
+status.innerText = "Done 🚀";
 progressBar.style.width = "100%";
 progressDash.innerText = "100%";
 
-status.innerText = "Done 🚀";
 stopTimer();
 
 });
