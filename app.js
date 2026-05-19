@@ -14,10 +14,6 @@ const timeDash = document.getElementById("timeDash");
 
 const checkBtn = document.getElementById("checkBtn");
 
-/* 🔎 SEARCH */
-const searchBtn = document.getElementById("searchBtn");
-const searchPanel = document.getElementById("searchPanel");
-
 let stopRequested = false;
 let startTime = 0;
 let timerInterval = null;
@@ -221,7 +217,7 @@ stopTimer();
 }
 };
 
-/* CHECK */
+/* CHECK (FINAL VERSION - NO CHANGE BUTTON) */
 checkBtn.onclick = async () => {
 
 setStatus("Checking... 🔍");
@@ -253,21 +249,6 @@ setStatus(
 } catch (err) {
 console.log(err);
 setStatus("Check Error ❌ " + err.message);
-}
-
-};
-
-/* 🔎 SEARCH BUTTON TOGGLE */
-searchBtn.onclick = () => {
-
-if (
-searchPanel.style.display === "none" ||
-searchPanel.style.display === ""
-) {
-searchPanel.style.display = "block";
-}
-else {
-searchPanel.style.display = "none";
 }
 
 };
