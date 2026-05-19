@@ -61,7 +61,6 @@ textarea {
     border: 1px solid #e5e7eb;
     border-radius: 12px;
     padding: 10px 12px;
-    flex-wrap: nowrap;
 }
 
 #repeatCount {
@@ -83,7 +82,6 @@ textarea {
     font-weight: 600;
     width: 70px;
     height: 30px;
-    flex-shrink: 0;
 }
 
 .row {
@@ -168,10 +166,10 @@ button.action {
 </div>
 
 <div class="row">
-<button class="action upload-btn">📂 Upload</button>
-<button class="action clear-btn">🧹 Clear</button>
-<button class="action paste-btn">🚀 Paste</button>
-<button class="action stop-btn">⛔ Stop</button>
+<button id="uploadBtn" class="action upload-btn">📂 Upload</button>
+<button id="clearBtn" class="action clear-btn">🧹 Clear</button>
+<button id="run" class="action paste-btn">🚀 Paste</button>
+<button id="stopBtn" class="action stop-btn">⛔ Stop</button>
 </div>
 
 <div class="status" id="status">🟢 Ready</div>
@@ -187,17 +185,12 @@ button.action {
 <div class="progress-bar" id="progressBar"></div>
 </div>
 
-<!-- 🔥 زر Search -->
 <button id="searchBtn" class="action search-btn">🔎 Search</button>
 
 </div>
 </div>
 
-<script>
-document.getElementById("searchBtn").addEventListener("click", function () {
-    prompt("🔎 ادخل الأرقام (افصل بينهم بفاصلة):");
-});
-</script>
+<script src="app.js"></script>
 
 </body>
 </html>
