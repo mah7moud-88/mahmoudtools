@@ -19,19 +19,15 @@ let startTime = 0;
 let timerInterval = null;
 
 let lastSourceValues = [];
-let isReadyToCheck = false;
 
 /* TIMER */
 function startTimer() {
-
     startTime = Date.now();
     clearInterval(timerInterval);
 
     timerInterval = setInterval(() => {
-
         const sec = Math.floor((Date.now() - startTime) / 1000);
         timeDash.innerText = sec + "s";
-
     }, 500);
 }
 
@@ -52,7 +48,6 @@ function updateDashboard(total, progress) {
 
 /* LIVE COUNT */
 function updateLiveCount() {
-
     const values = dataBox.value
         .split("\n")
         .map(v => v.trim())
@@ -112,11 +107,6 @@ totalDash.innerText = "0";
 progressDash.innerText = "0%";
 timeDash.innerText = "0s";
 
-isReadyToCheck = false;
-checkBtn.innerText = "🔍 Check";
-
-stopTimer();
-
 setStatus("Cleared 🧹");
 };
 
@@ -129,7 +119,7 @@ setStatus("Stopped ⛔");
 stopTimer();
 };
 
-/* PASTE */
+/* PASTE (UNCHANGED LOGIC) */
 document.getElementById("run").onclick = async () => {
 
 const repeatTimes = parseInt(repeatCountEl.value || "0");
@@ -163,9 +153,6 @@ setStatus("Processing ⚡");
 startTimer();
 
 updateDashboard(values.length, 0);
-
-isReadyToCheck = true;
-checkBtn.innerText = "⚡ Verify Results";
 
 try {
 
@@ -230,13 +217,8 @@ stopTimer();
 }
 };
 
-/* CHECK */
+/* CHECK (FINAL VERSION - NO CHANGE BUTTON) */
 checkBtn.onclick = async () => {
-
-if (!isReadyToCheck) {
-setStatus("Please paste first ⚠️");
-return;
-}
 
 setStatus("Checking... 🔍");
 
@@ -251,22 +233,16 @@ await context.sync();
 
 const excelValues = range.values.flat();
 
-let mismatchIndex = -1;
+const pastedCount = excelValues
+.map(v => String(v).trim())
+.filter(v => v !== "")
+.length;
 
-for (let i = 0; i < excelValues.length; i++) {
+const sourceCount = lastSourceValues.length || 0;
 
-if (excelValues[i] != lastSourceValues[i]) {
-mismatchIndex = i;
-break;
-}
-
-}
-
-if (mismatchIndex === -1) {
-setStatus("Match ✅ Everything correct");
-} else {
-setStatus("Mismatch ❌ at row " + (mismatchIndex + 1));
-}
+setStatus(
+`📊 Pasted: ${pastedCount} value(s) | Source: ${sourceCount}`
+);
 
 });
 
