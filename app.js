@@ -8,7 +8,6 @@ const status = document.getElementById("status");
 const progressBar = document.getElementById("progressBar");
 
 const checkBtn = document.getElementById("checkBtn");
-const reportBtn = document.getElementById("reportBtn");
 
 const loadedCount = document.getElementById("loadedCount");
 const totalDash = document.getElementById("totalDash");
@@ -18,7 +17,6 @@ const timeDash = document.getElementById("timeDash");
 let stopRequested = false;
 let startTime = 0;
 let timerInterval = null;
-let lastSourceValues = [];
 
 /* TIMER */
 function startTimer() {
@@ -31,19 +29,6 @@ timeDash.innerText = Math.floor((Date.now() - startTime)/1000) + "s";
 function stopTimer() {
 clearInterval(timerInterval);
 }
-
-/* LIVE COUNT */
-function updateLiveCount() {
-const values = (dataBox.value || "")
-.split("\n")
-.map(v => v.trim())
-.filter(v => v !== "");
-
-loadedCount.innerText = values.length;
-status.innerText = "Ready | " + values.length + " items";
-}
-
-dataBox.addEventListener("input", updateLiveCount);
 
 /* UPLOAD */
 uploadBtn.onclick = () => fileInput.click();
@@ -72,7 +57,9 @@ const cleaned = (json || [])
 .filter(v => v !== "");
 
 dataBox.value = cleaned.join("\n");
+
 loadedCount.innerText = cleaned.length;
+totalDash.innerText = cleaned.length;
 
 status.innerText = "Loaded ✅";
 
@@ -103,7 +90,7 @@ status.innerText = "Stopped ⛔";
 stopTimer();
 };
 
-/* PASTE */
+/* PASTE (FIXED + STABLE) */
 document.getElementById("run").onclick = async () => {
 
 const repeatTimes = parseInt(repeatCountEl.value || "0");
@@ -126,10 +113,12 @@ values.push(v);
 
 if (!values.length) return alert("اكتب أو ارفع بيانات");
 
-lastSourceValues = [...values];
-
 stopRequested = false;
+
 progressBar.style.width = "0%";
+loadedCount.innerText = values.length;
+totalDash.innerText = values.length;
+progressDash.innerText = "0%";
 
 status.innerText = "Processing ⚡";
 
@@ -140,45 +129,28 @@ try {
 await Excel.run(async (context) => {
 
 const sheet = context.workbook.worksheets.getActiveWorksheet();
-
 const selected = context.workbook.getSelectedRange();
-selected.load("rowIndex,columnIndex");
 
+selected.load("rowIndex,columnIndex");
 await context.sync();
 
 const startRow = selected.rowIndex;
 const col = selected.columnIndex;
 
-const range = sheet.getRangeByIndexes(startRow, col, 100000, 1);
+const targetRange = sheet.getRangeByIndexes(
+startRow,
+col,
+values.length,
+1
+);
 
-const visible = range.getSpecialCells(Excel.SpecialCellType.visible);
-
-visible.load("areas/items/rowCount");
-
-await context.sync();
-
-let i = 0;
-
-for (const area of visible.areas.items) {
-
-for (let r = 0; r < area.rowCount; r++) {
-
-if (stopRequested) break;
-if (i >= values.length) break;
-
-area.getCell(r,0).values = [[values[i++]]];
-
-let percent = Math.round((i / values.length) * 100);
-progressBar.style.width = percent + "%";
-
-}
-
-if (stopRequested) break;
-}
+targetRange.values = values.map(v => [v]);
 
 await context.sync();
 
 progressBar.style.width = "100%";
+progressDash.innerText = "100%";
+
 status.innerText = "Done 🚀";
 stopTimer();
 
@@ -204,39 +176,6 @@ const excel = (range.values || []).flat().filter(v => v !== "");
 const box = (dataBox.value || "").split("\n").filter(v => v.trim() !== "");
 
 status.innerText = `📊 Excel: ${excel.length} | Box: ${box.length}`;
-
-});
-
-};
-
-/* REPORT */
-reportBtn.onclick = async () => {
-
-await Excel.run(async (context) => {
-
-const range = context.workbook.getSelectedRange();
-range.load("values,rowCount,columnCount");
-
-await context.sync();
-
-if (range.columnCount < 2)
-return status.innerText = "Select 2 columns";
-
-let data = range.values;
-let report = [["Account","Value"]];
-
-for (let i=0;i<range.rowCount;i++){
-report.push([data[i][0], data[i][1]]);
-}
-
-const wb = XLSX.utils.book_new();
-const ws = XLSX.utils.aoa_to_sheet(report);
-
-XLSX.utils.book_append_sheet(wb, ws, "Report");
-
-XLSX.writeFile(wb, "report.xlsx");
-
-status.innerText = "Report downloaded ✅";
 
 });
 
