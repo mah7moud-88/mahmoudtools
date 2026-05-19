@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html>
 
@@ -121,6 +122,31 @@ button.action {
 .paste-btn { background: #16a34a; }
 .stop-btn { background: #f59e0b; }
 
+/* SEARCH BUTTON */
+.search-btn {
+    background: #8b5cf6;
+}
+
+/* SEARCH PANEL */
+#searchPanel {
+    display: none;
+    margin-top: 10px;
+    padding: 12px;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+}
+
+#searchInput {
+    width: 100%;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #d1d5db;
+    box-sizing: border-box;
+    font-size: 13px;
+}
+
+/* PROGRESS */
 .progress-container {
     width: 100%;
     height: 8px;
@@ -137,6 +163,7 @@ button.action {
     transition: width 0.2s ease;
 }
 
+/* STATUS */
 .status {
     margin-top: 10px;
     font-size: 12px;
@@ -144,6 +171,7 @@ button.action {
     color: #666;
 }
 
+/* DASHBOARD */
 .dashboard {
     display: flex;
     justify-content: space-between;
@@ -158,29 +186,6 @@ button.action {
 .dashboard div {
     min-width: 70px;
     text-align: center;
-}
-
-/* 🔎 SEARCH BUTTON */
-.search-wrapper {
-    margin-top: 12px;
-    display: flex;
-}
-
-.search-btn {
-    width: 100%;
-    padding: 10px;
-    border: none;
-    border-radius: 10px;
-    background: #8b5cf6;
-    color: white;
-    font-size: 13px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: 0.2s;
-}
-
-.search-btn:hover {
-    background: #7c3aed;
 }
 </style>
 </head>
@@ -199,7 +204,9 @@ button.action {
 
 <div class="repeat-wrapper">
 <label>🔁 Repeat</label>
+
 <input id="repeatCount" type="number" min="0" value="0">
+
 <button id="checkBtn" class="check-btn">🔍</button>
 </div>
 
@@ -225,15 +232,30 @@ button.action {
 <div class="progress-bar" id="progressBar"></div>
 </div>
 
-<!-- 🔎 SEARCH BUTTON (BOTTOM) -->
-<div class="search-wrapper">
-<button id="searchBtn" class="search-btn">🔎 Search</button>
+<!-- SEARCH BUTTON -->
+<div class="row">
+<button id="searchBtn" class="action search-btn">
+🔎 Search
+</button>
+</div>
+
+<!-- DROPDOWN PANEL -->
+<div id="searchPanel">
+
+<input
+id="searchInput"
+type="number"
+placeholder="ادخل رقم..."
+/>
+
 </div>
 
 </div>
+
 </div>
 
 <script src="app.js"></script>
 
 </body>
 </html>
+```
