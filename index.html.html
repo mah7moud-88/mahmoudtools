@@ -57,11 +57,12 @@ textarea {
     margin-top: 12px;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     background: #f8fafc;
     border: 1px solid #e5e7eb;
     border-radius: 12px;
     padding: 10px 12px;
+    flex-wrap: nowrap;
 }
 
 /* INPUT */
@@ -73,21 +74,23 @@ textarea {
     font-size: 13px;
 }
 
-/* 🔥 CHECK BUTTON PREMIUM STYLE */
+/* 🔥 CHECK BUTTON (SMALL + INSIDE BOX FIXED) */
 .check-btn {
     background: linear-gradient(135deg, #6366f1, #4f46e5);
-    font-size: 12px;
-    padding: 6px 10px;
+    font-size: 11px;
+    padding: 4px 8px;
     border-radius: 8px;
     border: none;
     cursor: pointer;
     color: white;
     font-weight: 600;
     transition: all 0.2s ease;
-    flex: none;
-    width: 85px;
-    height: 34px;
-    box-shadow: 0 4px 10px rgba(99, 102, 241, 0.25);
+
+    width: 70px;
+    height: 30px;
+    flex-shrink: 0;
+
+    box-shadow: 0 3px 8px rgba(99, 102, 241, 0.25);
 }
 
 .check-btn:hover {
@@ -182,7 +185,7 @@ button.action {
 <label>🔁 Repeat</label>
 <input id="repeatCount" type="number" min="0" value="0">
 
-<button id="checkBtn" class="check-btn">🔍 Check</button>
+<button id="checkBtn" class="check-btn">🔍</button>
 </div>
 
 <div class="row">
