@@ -52,7 +52,6 @@ textarea {
     box-sizing: border-box;
 }
 
-/* REPEAT */
 .repeat-wrapper {
     margin-top: 12px;
     display: flex;
@@ -62,6 +61,7 @@ textarea {
     border: 1px solid #e5e7eb;
     border-radius: 12px;
     padding: 10px 12px;
+    flex-wrap: nowrap;
 }
 
 #repeatCount {
@@ -81,9 +81,11 @@ textarea {
     cursor: pointer;
     color: white;
     font-weight: 600;
+    width: 70px;
+    height: 30px;
+    flex-shrink: 0;
 }
 
-/* BUTTONS */
 .row {
     display: flex;
     gap: 10px;
@@ -106,7 +108,27 @@ button.action {
 .paste-btn { background: #16a34a; }
 .stop-btn { background: #f59e0b; }
 
-/* STATUS */
+.progress-container {
+    width: 100%;
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 20px;
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+.progress-bar {
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(90deg,#16a34a,#22c55e);
+}
+
+.search-btn {
+    margin-top: 12px;
+    width: 100%;
+    background: #0ea5e9;
+}
+
 .status {
     margin-top: 10px;
     font-size: 12px;
@@ -114,32 +136,15 @@ button.action {
     color: #666;
 }
 
-/* SEARCH PANEL */
-#searchPanel {
-    display:none;
-    margin-top:10px;
-    padding:10px;
-    background:#f8fafc;
-    border:1px solid #ddd;
-    border-radius:10px;
-}
-
-#searchInput {
-    width:100%;
-    padding:8px;
-    border-radius:8px;
-    border:1px solid #ccc;
-}
-
-#searchBtn {
-    margin-top:8px;
-    width:100%;
-    padding:8px;
-    border:none;
-    background:#16a34a;
-    color:white;
-    border-radius:8px;
-    cursor:pointer;
+.dashboard {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    background: #f8fafc;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    margin-top: 10px;
 }
 </style>
 </head>
@@ -163,32 +168,36 @@ button.action {
 </div>
 
 <div class="row">
-<button id="uploadBtn" class="action upload-btn">📂 Upload</button>
-<button id="clearBtn" class="action clear-btn">🧹 Clear</button>
-<button id="run" class="action paste-btn">🚀 Paste</button>
-<button id="stopBtn" class="action stop-btn">⛔ Stop</button>
-
-<!-- زر البحث -->
-<button id="openSearchBtn" class="action upload-btn">🔍 Search</button>
-</div>
-
-<!-- Dropdown Search -->
-<div id="searchPanel">
-
-    <input id="searchInput" type="text" maxlength="6"
-        placeholder="اكتب آخر 6 أرقام">
-
-    <button id="searchBtn">بحث 🔍</button>
-
+<button class="action upload-btn">📂 Upload</button>
+<button class="action clear-btn">🧹 Clear</button>
+<button class="action paste-btn">🚀 Paste</button>
+<button class="action stop-btn">⛔ Stop</button>
 </div>
 
 <div class="status" id="status">🟢 Ready</div>
 
+<div class="dashboard">
+<div>📥 <span id="loadedCount">0</span></div>
+<div>📊 <span id="totalDash">0</span></div>
+<div>⚡ <span id="progressDash">0%</span></div>
+<div>⏱️ <span id="timeDash">0s</span></div>
 </div>
 
+<div class="progress-container">
+<div class="progress-bar" id="progressBar"></div>
 </div>
 
-<script src="app.js"></script>
+<!-- 🔥 زر Search -->
+<button id="searchBtn" class="action search-btn">🔎 Search</button>
+
+</div>
+</div>
+
+<script>
+document.getElementById("searchBtn").addEventListener("click", function () {
+    prompt("🔎 ادخل الأرقام (افصل بينهم بفاصلة):");
+});
+</script>
 
 </body>
 </html>
