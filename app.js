@@ -9,7 +9,56 @@ Office.onReady(() => {
     const liveCountEl = document.getElementById("liveCount");
     const progressBar = document.getElementById("progressBar");
 
+    // ===== NEW UX ELEMENTS =====
+    const loadedCount = document.getElementById("loadedCount");
+    const totalDash = document.getElementById("totalDash");
+    const progressDash = document.getElementById("progressDash");
+    const timeDash = document.getElementById("timeDash");
+
     let stopRequested = false;
+    let startTime;
+    let timerInterval;
+
+    // ======================
+    // TIMER
+    // ======================
+    function startTimer() {
+
+        startTime = Date.now();
+
+        clearInterval(timerInterval);
+
+        timerInterval = setInterval(() => {
+
+            const sec = Math.floor((Date.now() - startTime) / 1000);
+            timeDash.innerText = sec + "s";
+
+        }, 1000);
+    }
+
+    function stopTimer() {
+        clearInterval(timerInterval);
+    }
+
+    // ======================
+    // STATUS (UX WRAPPER)
+    // ======================
+    function setStatus(text) {
+
+        status.innerText = text;
+
+        status.style.transform = "translateY(0px)";
+        status.style.opacity = "1";
+    }
+
+    // ======================
+    // DASHBOARD UPDATE
+    // ======================
+    function updateDashboard(total, progress) {
+
+        if (totalDash) totalDash.innerText = total;
+        if (progressDash) progressDash.innerText = progress + "%";
+    }
 
     // ======================
     // Live Count
@@ -62,7 +111,11 @@ Office.onReady(() => {
 
             updateLiveCount();
 
-            status.innerText = "Loaded ✅";
+            // ===== UX SYNC =====
+            if (loadedCount) loadedCount.innerText = cleaned.length;
+
+            setStatus("Loaded ✅");
+
         };
 
         reader.readAsArrayBuffer(file);
@@ -81,7 +134,15 @@ Office.onReady(() => {
 
         progressBar.style.width = "0%";
 
-        status.innerText = "Cleared 🧹";
+        // ===== RESET DASHBOARD =====
+        if (loadedCount) loadedCount.innerText = "0";
+        if (totalDash) totalDash.innerText = "0";
+        if (progressDash) progressDash.innerText = "0%";
+        if (timeDash) timeDash.innerText = "0s";
+
+        stopTimer();
+
+        setStatus("Cleared 🧹");
     };
 
     // ======================
@@ -91,11 +152,12 @@ Office.onReady(() => {
 
         stopRequested = true;
 
-        status.innerText = "⛔ Stopping...";
+        setStatus("⛔ Stopping...");
+        stopTimer();
     };
 
     // ======================
-    // Paste
+    // Paste (UNCHANGED LOGIC)
     // ======================
     document.getElementById("run").onclick = async () => {
 
@@ -111,7 +173,7 @@ Office.onReady(() => {
         let values = [];
 
         // ======================
-        // Repeat Logic
+        // Repeat Logic (UNCHANGED)
         // ======================
         if (repeatTimes <= 0) {
 
@@ -135,7 +197,11 @@ Office.onReady(() => {
 
         stopRequested = false;
         progressBar.style.width = "0%";
-        status.innerText = "Processing... ⏳";
+
+        setStatus("Processing... ⏳");
+
+        startTimer();
+        updateDashboard(values.length, 0);
 
         try {
 
@@ -173,7 +239,7 @@ Office.onReady(() => {
                     for (let r = 0; r < area.rowCount; r++) {
 
                         if (stopRequested) {
-                            status.innerText = "⛔ Stopped";
+                            setStatus("⛔ Stopped");
                             break;
                         }
 
@@ -188,6 +254,9 @@ Office.onReady(() => {
                         const percent = Math.round((valueIndex / values.length) * 100);
 
                         progressBar.style.width = percent + "%";
+
+                        // ===== UX LIVE UPDATE =====
+                        updateDashboard(values.length, percent);
                     }
 
                     if (stopRequested) break;
@@ -200,8 +269,10 @@ Office.onReady(() => {
                 progressBar.style.width = "100%";
 
                 if (!stopRequested) {
-                    status.innerText = "Done 🚀";
+                    setStatus("Done 🚀");
                 }
+
+                stopTimer();
 
             });
 
@@ -209,7 +280,9 @@ Office.onReady(() => {
 
             console.log(err);
 
-            status.innerText = "Error ❌ " + err.message;
+            setStatus("Error ❌ " + err.message);
+
+            stopTimer();
         }
     };
 

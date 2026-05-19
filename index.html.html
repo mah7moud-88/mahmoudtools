@@ -2,287 +2,404 @@
 <html>
 
 <head>
-    <meta charset="UTF-8" />
-    <title>📊 Excel Paste Pro</title>
+<meta charset="UTF-8" />
+<title>📊 Excel Paste Pro</title>
 
-    <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-    <style>
-        body {
-            font-family: "Segoe UI", Arial;
-            background: #eef2f7;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-        }
+<style>
+body {
+    font-family: "Segoe UI", Arial;
+    background: #eef2f7;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+}
 
-        .card {
-            width: 360px;
-            background: white;
-            border-radius: 18px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
-            overflow: hidden;
-        }
+/* CARD */
+.card {
+    width: 360px;
+    background: white;
+    border-radius: 18px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+    overflow: hidden;
+}
 
-        .topbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 14px;
-        }
+.topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px;
+}
 
-        h2 {
-            margin: 0;
-            font-size: 16px;
-        }
+h2 {
+    margin: 0;
+    font-size: 16px;
+}
 
-        .content {
-            padding: 14px;
-        }
+.content {
+    padding: 14px;
+}
 
-        textarea {
-            width: 100%;
-            height: 180px;
-            padding: 12px;
-            border-radius: 12px;
-            border: 1px solid #e5e7eb;
-            resize: none;
-            font-size: 13px;
-            box-sizing: border-box;
-        }
+textarea {
+    width: 100%;
+    height: 180px;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    resize: none;
+    font-size: 13px;
+    box-sizing: border-box;
+}
 
-        /* REPEAT BOX */
+/* REPEAT */
+.repeat-wrapper {
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 10px 12px;
+}
 
-        .repeat-wrapper {
-            margin-top: 12px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: #f8fafc;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 10px 12px;
-        }
+#repeatCount {
+    width: 90px;
+    padding: 7px 10px;
+    border-radius: 10px;
+    border: 1px solid #d1d5db;
+    font-size: 13px;
+}
 
-        .repeat-wrapper label {
-            font-size: 13px;
-            color: #374151;
-            font-weight: 600;
-            white-space: nowrap;
-        }
+/* BUTTONS */
+.row {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
 
-        #repeatCount {
-            width: 90px;
-            padding: 7px 10px;
-            border-radius: 10px;
-            border: 1px solid #d1d5db;
-            font-size: 13px;
-            outline: none;
-            transition: 0.2s;
-            background: white;
-        }
+button.action {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 10px;
+    color: white;
+    cursor: pointer;
+    font-size: 13px;
+}
 
-        #repeatCount:focus {
-            border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
-        }
+.upload-btn { background: #2563eb; }
+.clear-btn { background: #ef4444; }
+.paste-btn { background: #16a34a; }
+.stop-btn { background: #f59e0b; }
 
-        /* BUTTONS */
+/* PROGRESS */
+.progress-container {
+    width: 100%;
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 20px;
+    overflow: hidden;
+    margin-top: 10px;
+}
 
-        .row {
-            display: flex;
-            gap: 10px;
-            margin-top: 12px;
-            flex-wrap: wrap;
-        }
+.progress-bar {
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(90deg,#16a34a,#22c55e);
+    transition: width 0.2s ease;
+}
 
-        button.action {
-            flex: 1;
-            padding: 10px;
-            border: none;
-            border-radius: 10px;
-            color: white;
-            cursor: pointer;
-            font-size: 13px;
-            transition: 0.2s;
-        }
+/* STATUS */
+.status {
+    margin-top: 10px;
+    font-size: 12px;
+    text-align: center;
+    color: #666;
+    transition: 0.3s;
+}
 
-        button.action:hover {
-            opacity: 0.9;
-            transform: translateY(-1px);
-        }
+/* SMART STATUS COLORS */
+.status.success { color: #16a34a; }
+.status.error { color: #dc2626; }
+.status.running { color: #2563eb; }
 
-        .upload-btn {
-            background: #2563eb;
-        }
+/* DASHBOARD */
+.dashboard {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    background: #f8fafc;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    margin-top: 10px;
+}
 
-        .clear-btn {
-            background: #ef4444;
-        }
+/* ANIMATION */
+@keyframes fadeIn {
+    from { opacity: 0.5; transform: translateY(3px); }
+    to { opacity: 1; transform: translateY(0); }
+}
 
-        .paste-btn {
-            background: #16a34a;
-        }
-
-        .stop-btn {
-            background: #f59e0b;
-        }
-
-        /* STATUS */
-
-        .status {
-            margin-top: 10px;
-            font-size: 12px;
-            color: #666;
-            text-align: center;
-        }
-
-        /* PROGRESS BAR */
-
-        .progress-container {
-            width: 100%;
-            height: 8px;
-            background: #e5e7eb;
-            border-radius: 20px;
-            overflow: hidden;
-            margin-top: 10px;
-        }
-
-        .progress-bar {
-            width: 0%;
-            height: 100%;
-            background: linear-gradient(90deg, #16a34a, #22c55e);
-            transition: width 0.2s ease;
-        }
-
-        /* COUNTS */
-
-        .stats-row {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 12px;
-            margin-top: 12px;
-            text-align: center;
-        }
-
-        .count {
-            font-size: 11px;
-            color: #444;
-            background: #f8fafc;
-            padding: 5px 8px;
-            border-radius: 8px;
-            border: 1px solid #e5e7eb;
-            min-width: 95px;
-        }
-
-        .count span {
-            font-weight: bold;
-            color: #111827;
-        }
-    </style>
+.status.animate {
+    animation: fadeIn 0.3s ease;
+}
+</style>
 </head>
 
 <body>
 
-    <div class="card">
+<div class="card">
 
-        <div class="topbar">
-            <h2>📊 Excel Paste Pro ⚡</h2>
-        </div>
+<div class="topbar">
+<h2>📊 Excel Paste Pro ⚡</h2>
+</div>
 
-        <div class="content">
+<div class="content">
 
-            <textarea id="dataBox"
-                placeholder="✍️ الصق أو ارفع ملف Excel هنا..."></textarea>
+<textarea id="dataBox" placeholder="✍️ الصق أو ارفع ملف Excel هنا..."></textarea>
 
-            <!-- REPEAT INPUT -->
+<!-- REPEAT -->
+<div class="repeat-wrapper">
+<label>🔁 Repeat</label>
+<input id="repeatCount" type="number" min="0" value="0">
+</div>
 
-            <div class="repeat-wrapper">
+<!-- BUTTONS -->
+<div class="row">
+<button id="uploadBtn" class="action upload-btn">📂 Upload</button>
+<button id="clearBtn" class="action clear-btn">🧹 Clear</button>
+<button id="run" class="action paste-btn">🚀 Paste</button>
+<button id="stopBtn" class="action stop-btn">⛔ Stop</button>
+</div>
 
-                <label for="repeatCount">
-                    🔁 Repeat
-                </label>
+<input type="file" id="fileInput" accept=".xlsx,.xls" hidden />
 
-                <input id="repeatCount"
-                    type="number"
-                    min="0"
-                    value="0">
+<!-- STATUS -->
+<div class="status" id="status">🟢 Ready</div>
 
-            </div>
+<!-- DASHBOARD (NEW UX) -->
+<div class="dashboard">
+<div>📥 <span id="loadedCount">0</span></div>
+<div>📊 <span id="totalDash">0</span></div>
+<div>⚡ <span id="progressDash">0%</span></div>
+<div>⏱️ <span id="timeDash">0s</span></div>
+</div>
 
-            <!-- BUTTONS -->
+<!-- PROGRESS -->
+<div class="progress-container">
+<div class="progress-bar" id="progressBar"></div>
+</div>
 
-            <div class="row">
+</div>
 
-                <button id="uploadBtn"
-                    class="action upload-btn">
-                    📂 Upload
-                </button>
+</div>
 
-                <button id="clearBtn"
-                    class="action clear-btn">
-                    🧹 Clear
-                </button>
+<script>
+Office.onReady(() => {
 
-                <button id="run"
-                    class="action paste-btn">
-                    🚀 Paste
-                </button>
+const uploadBtn = document.getElementById("uploadBtn");
+const fileInput = document.getElementById("fileInput");
+const dataBox = document.getElementById("dataBox");
+const repeatCountEl = document.getElementById("repeatCount");
+const status = document.getElementById("status");
+const progressBar = document.getElementById("progressBar");
 
-                <button id="stopBtn"
-                    class="action stop-btn">
-                    ⛔ Stop
-                </button>
+const loadedCount = document.getElementById("loadedCount");
+const totalDash = document.getElementById("totalDash");
+const progressDash = document.getElementById("progressDash");
+const timeDash = document.getElementById("timeDash");
 
-            </div>
+let stopRequested = false;
+let startTime;
+let timerInterval;
 
-            <!-- FILE INPUT -->
+/* TIMER */
+function startTimer() {
+    startTime = Date.now();
+    timerInterval = setInterval(() => {
+        const sec = Math.floor((Date.now() - startTime) / 1000);
+        timeDash.innerText = sec + "s";
+    }, 1000);
+}
 
-            <input type="file"
-                id="fileInput"
-                accept=".xlsx,.xls"
-                hidden />
+/* STATUS */
+function setStatus(text, type = "") {
+    status.className = "status " + type;
+    status.innerText = text;
+    status.classList.add("animate");
 
-            <!-- STATUS -->
+    setTimeout(() => status.classList.remove("animate"), 300);
+}
 
-            <div class="status"
-                id="status">
-                🟢 Ready
-            </div>
+/* LIVE COUNT */
+function updateDashboard(total, progress) {
+    totalDash.innerText = total;
+    progressDash.innerText = progress + "%";
+}
 
-            <!-- PROGRESS -->
+/* UPLOAD */
+uploadBtn.onclick = () => fileInput.click();
 
-            <div class="progress-container">
+fileInput.onchange = (e) => {
 
-                <div class="progress-bar"
-                    id="progressBar"></div>
+const file = e.target.files[0];
+if (!file) return;
 
-            </div>
+const reader = new FileReader();
 
-            <!-- COUNTS -->
+reader.onload = (event) => {
 
-            <div class="stats-row">
+const data = new Uint8Array(event.target.result);
+const workbook = XLSX.read(data, { type: "array" });
 
-                <div class="count">
-                    📊 Total:
-                    <span id="count">0</span>
-                </div>
+const sheet = workbook.Sheets[workbook.SheetNames[0]];
 
-                <div class="count">
-                    📥 Live Count:
-                    <span id="liveCount">0</span>
-                </div>
+const json = XLSX.utils.sheet_to_json(sheet, {
+header: 1,
+defval: ""
+});
 
-            </div>
+const cleaned = json.flat()
+.map(v => String(v).trim())
+.filter(v => v !== "");
 
-        </div>
+dataBox.value = cleaned.join("\n");
 
-    </div>
+loadedCount.innerText = cleaned.length;
 
-    <script src="app.js"></script>
+setStatus("Loaded ✅", "success");
+
+};
+
+reader.readAsArrayBuffer(file);
+};
+
+/* CLEAR */
+document.getElementById("clearBtn").onclick = () => {
+
+dataBox.value = "";
+progressBar.style.width = "0%";
+
+loadedCount.innerText = "0";
+totalDash.innerText = "0";
+progressDash.innerText = "0%";
+timeDash.innerText = "0s";
+
+setStatus("Cleared 🧹");
+};
+
+/* STOP */
+document.getElementById("stopBtn").onclick = () => {
+stopRequested = true;
+setStatus("Stopping ⛔", "error");
+};
+
+/* PASTE (UNCHANGED LOGIC + UX ONLY) */
+document.getElementById("run").onclick = async () => {
+
+const repeatTimes = parseInt(repeatCountEl.value || "0");
+
+const baseValues = dataBox.value
+.split("\n")
+.map(v => v.trim())
+.filter(v => v !== "");
+
+let values = [];
+
+if (repeatTimes <= 0) values = baseValues;
+else {
+for (const v of baseValues) {
+for (let i = 0; i < repeatTimes; i++) {
+values.push(v);
+}}}
+
+if (!values.length) {
+alert("اكتب أو ارفع بيانات");
+return;
+}
+
+stopRequested = false;
+progressBar.style.width = "0%";
+
+setStatus("Processing ⚡", "running");
+
+startTimer();
+updateDashboard(values.length, 0);
+
+try {
+
+await Excel.run(async (context) => {
+
+const sheet = context.workbook.worksheets.getActiveWorksheet();
+
+const selected = context.workbook.getSelectedRange();
+selected.load("rowIndex,columnIndex");
+await context.sync();
+
+const startRow = selected.rowIndex;
+const col = selected.columnIndex;
+
+const scanRange = sheet.getRangeByIndexes(startRow, col, 100000, 1);
+
+const visibleRange = scanRange.getSpecialCells(Excel.SpecialCellType.visible);
+
+visibleRange.load("areas/items/rowCount");
+
+await context.sync();
+
+let valueIndex = 0;
+
+for (const area of visibleRange.areas.items) {
+
+for (let r = 0; r < area.rowCount; r++) {
+
+if (stopRequested) {
+setStatus("Stopped ⛔", "error");
+break;
+}
+
+if (valueIndex >= values.length) break;
+
+const cell = area.getCell(r, 0);
+cell.values = [[values[valueIndex]]];
+
+valueIndex++;
+
+const percent = Math.round((valueIndex / values.length) * 100);
+
+progressBar.style.width = percent + "%";
+updateDashboard(values.length, percent);
+
+}
+
+if (stopRequested) break;
+}
+
+await context.sync();
+
+progressBar.style.width = "100%";
+
+setStatus("Done 🚀", "success");
+
+clearInterval(timerInterval);
+
+});
+
+} catch (err) {
+console.log(err);
+setStatus("Error ❌ " + err.message, "error");
+clearInterval(timerInterval);
+}
+
+};
+
+});
+</script>
 
 </body>
-
 </html>
