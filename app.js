@@ -19,7 +19,7 @@ let stopRequested = false;
 let startTime = 0;
 let timerInterval = null;
 
-/* TIMER */
+/* ================= TIMER ================= */
 function startTimer() {
 startTime = Date.now();
 timerInterval = setInterval(() => {
@@ -31,12 +31,12 @@ function stopTimer() {
 clearInterval(timerInterval);
 }
 
-/* STATUS */
+/* ================= STATUS ================= */
 function setStatus(text) {
 status.innerText = text;
 }
 
-/* LIVE COUNT */
+/* ================= LIVE COUNT ================= */
 function updateLiveCount() {
 const values = (dataBox.value || "")
 .split("\n")
@@ -48,7 +48,7 @@ loadedCount.innerText = values.length;
 
 dataBox.addEventListener("input", updateLiveCount);
 
-/* UPLOAD */
+/* ================= UPLOAD ================= */
 uploadBtn.onclick = () => fileInput.click();
 
 fileInput.onchange = (e) => {
@@ -85,7 +85,7 @@ setStatus("Loaded ✅");
 reader.readAsArrayBuffer(file);
 };
 
-/* CLEAR */
+/* ================= CLEAR ================= */
 document.getElementById("clearBtn").onclick = () => {
 
 dataBox.value = "";
@@ -100,14 +100,14 @@ setStatus("Cleared 🧹");
 
 };
 
-/* STOP */
+/* ================= STOP ================= */
 document.getElementById("stopBtn").onclick = () => {
 stopRequested = true;
 setStatus("Stopped ⛔");
 stopTimer();
 };
 
-/* PASTE */
+/* ================= PASTE ================= */
 document.getElementById("run").onclick = async () => {
 
 const repeatTimes = parseInt(repeatCountEl.value || "0");
@@ -119,8 +119,9 @@ const baseValues = (dataBox.value || "")
 
 let values = [];
 
-if (repeatTimes <= 0) values = baseValues;
-else {
+if (repeatTimes <= 0) {
+values = baseValues;
+} else {
 for (const v of baseValues) {
 for (let i = 0; i < repeatTimes; i++) {
 values.push(v);
@@ -128,7 +129,10 @@ values.push(v);
 }
 }
 
-if (!values.length) return alert("اكتب أو ارفع بيانات");
+if (!values.length) {
+alert("اكتب أو ارفع بيانات");
+return;
+}
 
 stopRequested = false;
 progressBar.style.width = "0%";
@@ -168,7 +172,7 @@ for (let r = 0; r < area.rowCount; r++) {
 if (stopRequested) break;
 if (i >= values.length) break;
 
-area.getCell(r,0).values = [[values[i++]]];
+area.getCell(r, 0).values = [[values[i++]]];
 
 let percent = Math.round((i / values.length) * 100);
 progressBar.style.width = percent + "%";
@@ -187,13 +191,14 @@ stopTimer();
 });
 
 } catch (err) {
+console.log(err);
 setStatus("Error ❌ " + err.message);
 stopTimer();
 }
 
 };
 
-/* CHECK */
+/* ================= CHECK ================= */
 checkBtn.onclick = async () => {
 
 try {
@@ -218,7 +223,7 @@ setStatus("Check Error ❌ " + err.message);
 
 };
 
-/* REPORT */
+/* ================= REPORT (FIXED FINAL) ================= */
 reportBtn.onclick = async () => {
 
 try {
@@ -232,15 +237,25 @@ range.load("values,rowCount,columnCount");
 
 await context.sync();
 
-if (range.columnCount < 2)
-return setStatus("Select 2 columns");
+if (range.columnCount < 2) {
+setStatus("❌ Select 2 columns");
+return;
+}
 
-const data = range.values;
+const data = range.values || [];
 
-let report = [["Account","Value"]];
+let report = [["Account", "Value"]];
 
-for (let i = 0; i < range.rowCount; i++) {
-report.push([data[i][0], data[i][1]]);
+for (let i = 0; i < data.length; i++) {
+
+const row = data[i];
+
+if (!row || row.length < 2) continue;
+
+const col1 = row[0] ?? "";
+const col2 = row[1] ?? "";
+
+report.push([col1, col2]);
 }
 
 const wb = XLSX.utils.book_new();
@@ -255,6 +270,7 @@ setStatus("Report downloaded ✅");
 });
 
 } catch (err) {
+console.log(err);
 setStatus("Report Error ❌ " + err.message);
 }
 
