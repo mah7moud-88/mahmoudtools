@@ -94,6 +94,7 @@ button.action {
 .clear-btn { background: #ef4444; }
 .paste-btn { background: #16a34a; }
 .stop-btn { background: #f59e0b; }
+.check-btn { background: #6366f1; }
 
 /* PROGRESS */
 .progress-container {
@@ -135,17 +136,6 @@ button.action {
 .dashboard div {
     min-width: 70px;
     text-align: center;
-    font-weight: 600;
-}
-
-/* STATUS ANIMATION */
-.status.animate {
-    animation: fadeIn 0.3s ease;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0.5; transform: translateY(3px); }
-    to { opacity: 1; transform: translateY(0); }
 }
 </style>
 </head>
@@ -165,6 +155,9 @@ button.action {
 <div class="repeat-wrapper">
 <label>🔁 Repeat</label>
 <input id="repeatCount" type="number" min="0" value="0">
+
+<!-- 🔍 CHECK BUTTON -->
+<button id="checkBtn" class="action check-btn">🔍 Check</button>
 </div>
 
 <div class="row">

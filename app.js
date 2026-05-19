@@ -12,26 +12,25 @@ const totalDash = document.getElementById("totalDash");
 const progressDash = document.getElementById("progressDash");
 const timeDash = document.getElementById("timeDash");
 
+const checkBtn = document.getElementById("checkBtn");
+
 let stopRequested = false;
 let startTime = 0;
 let timerInterval = null;
 
-/* ======================
-TIMER FIX
-====================== */
+let lastSourceValues = [];
+let isReadyToCheck = false;
+
+/* TIMER */
 function startTimer() {
 
     startTime = Date.now();
-
     clearInterval(timerInterval);
 
     timerInterval = setInterval(() => {
 
         const sec = Math.floor((Date.now() - startTime) / 1000);
-
-        if (timeDash) {
-            timeDash.innerText = sec + "s";
-        }
+        timeDash.innerText = sec + "s";
 
     }, 500);
 }
@@ -40,31 +39,18 @@ function stopTimer() {
     clearInterval(timerInterval);
 }
 
-/* ======================
-STATUS
-====================== */
-function setStatus(text, type = "") {
-
-    status.className = "status " + type;
+/* STATUS */
+function setStatus(text) {
     status.innerText = text;
 }
 
-/* ======================
-DASHBOARD UPDATE
-====================== */
+/* DASHBOARD */
 function updateDashboard(total, progress) {
-
-    if (totalDash) totalDash.innerText = total || 0;
-
-    if (progressDash) {
-        progressDash.innerText = (progress || 0) + "%";
-        progressDash.style.color = progress > 50 ? "#16a34a" : "#2563eb";
-    }
+    totalDash.innerText = total || 0;
+    progressDash.innerText = (progress || 0) + "%";
 }
 
-/* ======================
-LIVE COUNT
-====================== */
+/* LIVE COUNT */
 function updateLiveCount() {
 
     const values = dataBox.value
@@ -72,16 +58,12 @@ function updateLiveCount() {
         .map(v => v.trim())
         .filter(v => v !== "");
 
-    if (loadedCount) {
-        loadedCount.innerText = values.length;
-    }
+    loadedCount.innerText = values.length;
 }
 
 dataBox.addEventListener("input", updateLiveCount);
 
-/* ======================
-UPLOAD
-====================== */
+/* UPLOAD */
 uploadBtn.onclick = () => fileInput.click();
 
 fileInput.onchange = (e) => {
@@ -109,20 +91,16 @@ const cleaned = json.flat()
 
 dataBox.value = cleaned.join("\n");
 
-updateLiveCount();
-
-setStatus("Loaded ✅", "success");
-
 loadedCount.innerText = cleaned.length;
+
+setStatus("Loaded ✅");
 
 };
 
 reader.readAsArrayBuffer(file);
 };
 
-/* ======================
-CLEAR
-====================== */
+/* CLEAR */
 document.getElementById("clearBtn").onclick = () => {
 
 dataBox.value = "";
@@ -134,25 +112,24 @@ totalDash.innerText = "0";
 progressDash.innerText = "0%";
 timeDash.innerText = "0s";
 
+isReadyToCheck = false;
+checkBtn.innerText = "🔍 Check";
+
 stopTimer();
 
 setStatus("Cleared 🧹");
 };
 
-/* ======================
-STOP
-====================== */
+/* STOP */
 document.getElementById("stopBtn").onclick = () => {
 
 stopRequested = true;
-setStatus("Stopped ⛔", "error");
+setStatus("Stopped ⛔");
 
 stopTimer();
 };
 
-/* ======================
-PASTE (UNCHANGED LOGIC)
-====================== */
+/* PASTE */
 document.getElementById("run").onclick = async () => {
 
 const repeatTimes = parseInt(repeatCountEl.value || "0");
@@ -164,9 +141,8 @@ const baseValues = dataBox.value
 
 let values = [];
 
-if (repeatTimes <= 0) {
-values = baseValues;
-} else {
+if (repeatTimes <= 0) values = baseValues;
+else {
 for (const v of baseValues) {
 for (let i = 0; i < repeatTimes; i++) {
 values.push(v);
@@ -177,14 +153,19 @@ alert("اكتب أو ارفع بيانات");
 return;
 }
 
+lastSourceValues = [...values];
+
 stopRequested = false;
 progressBar.style.width = "0%";
 
-setStatus("Processing ⚡", "running");
+setStatus("Processing ⚡");
 
 startTimer();
 
 updateDashboard(values.length, 0);
+
+isReadyToCheck = true;
+checkBtn.innerText = "⚡ Verify Results";
 
 try {
 
@@ -213,15 +194,11 @@ for (const area of visibleRange.areas.items) {
 
 for (let r = 0; r < area.rowCount; r++) {
 
-if (stopRequested) {
-setStatus("Stopped ⛔", "error");
-break;
-}
+if (stopRequested) break;
 
 if (valueIndex >= values.length) break;
 
 const cell = area.getCell(r, 0);
-
 cell.values = [[values[valueIndex]]];
 
 valueIndex++;
@@ -229,7 +206,6 @@ valueIndex++;
 const percent = Math.round((valueIndex / values.length) * 100);
 
 progressBar.style.width = percent + "%";
-
 updateDashboard(values.length, percent);
 
 }
@@ -241,19 +217,62 @@ await context.sync();
 
 progressBar.style.width = "100%";
 
-setStatus("Done 🚀", "success");
+setStatus("Done 🚀");
 
 stopTimer();
 
 });
 
 } catch (err) {
-
 console.log(err);
-
-setStatus("Error ❌ " + err.message, "error");
-
+setStatus("Error ❌ " + err.message);
 stopTimer();
+}
+};
+
+/* CHECK */
+checkBtn.onclick = async () => {
+
+if (!isReadyToCheck) {
+setStatus("Please paste first ⚠️");
+return;
+}
+
+setStatus("Checking... 🔍");
+
+try {
+
+await Excel.run(async (context) => {
+
+const range = context.workbook.getSelectedRange();
+range.load("values");
+
+await context.sync();
+
+const excelValues = range.values.flat();
+
+let mismatchIndex = -1;
+
+for (let i = 0; i < excelValues.length; i++) {
+
+if (excelValues[i] != lastSourceValues[i]) {
+mismatchIndex = i;
+break;
+}
+
+}
+
+if (mismatchIndex === -1) {
+setStatus("Match ✅ Everything correct");
+} else {
+setStatus("Mismatch ❌ at row " + (mismatchIndex + 1));
+}
+
+});
+
+} catch (err) {
+console.log(err);
+setStatus("Check Error ❌ " + err.message);
 }
 
 };
