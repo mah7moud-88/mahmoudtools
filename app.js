@@ -18,12 +18,13 @@ const timeDash = document.getElementById("timeDash");
 let stopRequested = false;
 let startTime = 0;
 let timerInterval = null;
+let lastSourceValues = [];
 
-/* ================= TIMER ================= */
+/* TIMER */
 function startTimer() {
 startTime = Date.now();
 timerInterval = setInterval(() => {
-timeDash.innerText = Math.floor((Date.now() - startTime) / 1000) + "s";
+timeDash.innerText = Math.floor((Date.now() - startTime)/1000) + "s";
 }, 500);
 }
 
@@ -31,12 +32,7 @@ function stopTimer() {
 clearInterval(timerInterval);
 }
 
-/* ================= STATUS ================= */
-function setStatus(text) {
-status.innerText = text;
-}
-
-/* ================= LIVE COUNT ================= */
+/* LIVE COUNT */
 function updateLiveCount() {
 const values = (dataBox.value || "")
 .split("\n")
@@ -44,15 +40,15 @@ const values = (dataBox.value || "")
 .filter(v => v !== "");
 
 loadedCount.innerText = values.length;
+status.innerText = "Ready | " + values.length + " items";
 }
 
 dataBox.addEventListener("input", updateLiveCount);
 
-/* ================= UPLOAD ================= */
+/* UPLOAD */
 uploadBtn.onclick = () => fileInput.click();
 
 fileInput.onchange = (e) => {
-
 const file = e.target.files[0];
 if (!file) return;
 
@@ -72,20 +68,20 @@ defval: ""
 
 const cleaned = (json || [])
 .flat()
-.map(v => String(v).trim())
+.map(v => String(v || "").trim())
 .filter(v => v !== "");
 
 dataBox.value = cleaned.join("\n");
 loadedCount.innerText = cleaned.length;
 
-setStatus("Loaded ✅");
+status.innerText = "Loaded ✅";
 
 };
 
 reader.readAsArrayBuffer(file);
 };
 
-/* ================= CLEAR ================= */
+/* CLEAR */
 document.getElementById("clearBtn").onclick = () => {
 
 dataBox.value = "";
@@ -96,18 +92,18 @@ totalDash.innerText = "0";
 progressDash.innerText = "0%";
 timeDash.innerText = "0s";
 
-setStatus("Cleared 🧹");
+status.innerText = "Cleared 🧹";
 
 };
 
-/* ================= STOP ================= */
+/* STOP */
 document.getElementById("stopBtn").onclick = () => {
 stopRequested = true;
-setStatus("Stopped ⛔");
+status.innerText = "Stopped ⛔";
 stopTimer();
 };
 
-/* ================= PASTE ================= */
+/* PASTE */
 document.getElementById("run").onclick = async () => {
 
 const repeatTimes = parseInt(repeatCountEl.value || "0");
@@ -119,9 +115,8 @@ const baseValues = (dataBox.value || "")
 
 let values = [];
 
-if (repeatTimes <= 0) {
-values = baseValues;
-} else {
+if (repeatTimes <= 0) values = baseValues;
+else {
 for (const v of baseValues) {
 for (let i = 0; i < repeatTimes; i++) {
 values.push(v);
@@ -129,15 +124,14 @@ values.push(v);
 }
 }
 
-if (!values.length) {
-alert("اكتب أو ارفع بيانات");
-return;
-}
+if (!values.length) return alert("اكتب أو ارفع بيانات");
+
+lastSourceValues = [...values];
 
 stopRequested = false;
 progressBar.style.width = "0%";
 
-setStatus("Processing ⚡");
+status.innerText = "Processing ⚡";
 
 startTimer();
 
@@ -149,6 +143,7 @@ const sheet = context.workbook.worksheets.getActiveWorksheet();
 
 const selected = context.workbook.getSelectedRange();
 selected.load("rowIndex,columnIndex");
+
 await context.sync();
 
 const startRow = selected.rowIndex;
@@ -159,6 +154,7 @@ const range = sheet.getRangeByIndexes(startRow, col, 100000, 1);
 const visible = range.getSpecialCells(Excel.SpecialCellType.visible);
 
 visible.load("areas/items/rowCount");
+
 await context.sync();
 
 let i = 0;
@@ -183,22 +179,20 @@ if (stopRequested) break;
 await context.sync();
 
 progressBar.style.width = "100%";
-setStatus("Done 🚀");
+status.innerText = "Done 🚀";
 stopTimer();
 
 });
 
 } catch (err) {
-setStatus("Error ❌ " + err.message);
+status.innerText = "Error ❌ " + err.message;
 stopTimer();
 }
 
 };
 
-/* ================= CHECK ================= */
+/* CHECK */
 checkBtn.onclick = async () => {
-
-try {
 
 await Excel.run(async (context) => {
 
@@ -209,63 +203,30 @@ await context.sync();
 const excel = (range.values || []).flat().filter(v => v !== "");
 const box = (dataBox.value || "").split("\n").filter(v => v.trim() !== "");
 
-setStatus(`📊 Excel: ${excel.length} | Box: ${box.length}`);
+status.innerText = `📊 Excel: ${excel.length} | Box: ${box.length}`;
 
 });
 
-} catch (err) {
-setStatus("Check Error ❌ " + err.message);
-}
-
 };
 
-/* ================= REPORT (FIXED VISIBLES) ================= */
+/* REPORT */
 reportBtn.onclick = async () => {
-
-try {
-
-setStatus("Generating Report... 📊");
 
 await Excel.run(async (context) => {
 
-const sheet = context.workbook.worksheets.getActiveWorksheet();
+const range = context.workbook.getSelectedRange();
+range.load("values,rowCount,columnCount");
 
-const usedRange = sheet.getUsedRange();
-
-// 👇 important: visible only
-const visible = usedRange.getSpecialCells(Excel.SpecialCellType.visible);
-
-visible.load("areas/items/rowCount");
 await context.sync();
 
-let report = [["Account", "Value"]];
+if (range.columnCount < 2)
+return status.innerText = "Select 2 columns";
 
-for (const area of visible.areas.items) {
+let data = range.values;
+let report = [["Account","Value"]];
 
-area.load("values");
-await context.sync();
-
-const vals = area.values;
-
-for (let i = 0; i < vals.length; i++) {
-
-const row = vals[i];
-
-if (!row || row.length < 2) continue;
-
-const col1 = row[0] ?? "";
-const col2 = row[1] ?? "";
-
-if (col1 === "" && col2 === "") continue;
-
-report.push([col1, col2]);
-}
-
-}
-
-if (report.length === 1) {
-setStatus("❌ No visible data found");
-return;
+for (let i=0;i<range.rowCount;i++){
+report.push([data[i][0], data[i][1]]);
 }
 
 const wb = XLSX.utils.book_new();
@@ -275,14 +236,9 @@ XLSX.utils.book_append_sheet(wb, ws, "Report");
 
 XLSX.writeFile(wb, "report.xlsx");
 
-setStatus("Report downloaded ✅");
+status.innerText = "Report downloaded ✅";
 
 });
-
-} catch (err) {
-console.log(err);
-setStatus("Report Error ❌ " + err.message);
-}
 
 };
 
