@@ -52,65 +52,54 @@ textarea {
     box-sizing: border-box;
 }
 
-/* 🔁 REPEAT BOX FINAL */
+/* REPEAT WRAPPER */
 .repeat-wrapper {
     margin-top: 12px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     background: #f8fafc;
     border: 1px solid #e5e7eb;
     border-radius: 12px;
-    padding: 8px 10px;
+    padding: 10px 12px;
 }
 
-/* LABEL */
-.repeat-wrapper label {
-    font-size: 12px;
-    font-weight: 600;
-    color: #374151;
-    white-space: nowrap;
-}
-
-/* INPUT SMALL */
+/* INPUT */
 #repeatCount {
-    width: 70px;
-    padding: 5px 8px;
-    border-radius: 8px;
+    width: 90px;
+    padding: 7px 10px;
+    border-radius: 10px;
     border: 1px solid #d1d5db;
+    font-size: 13px;
+}
+
+/* 🔥 CHECK BUTTON (same style but added fix) */
+.check-btn {
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
     font-size: 12px;
-    text-align: center;
-    outline: none;
-}
-
-/* MINI ACTIONS */
-.mini-actions {
-    display: flex;
-    gap: 6px;
-    margin-left: auto;
-}
-
-/* MINI BUTTONS */
-.mini-btn {
-    width: 30px;
-    height: 30px;
+    padding: 6px 10px;
     border-radius: 8px;
     border: none;
     cursor: pointer;
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #eef2f7;
-    transition: 0.2s;
+    color: white;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    flex: none;
+    width: 85px;
+    height: 34px;
+    box-shadow: 0 4px 10px rgba(99, 102, 241, 0.25);
 }
 
-.mini-btn:hover {
-    background: #e2e8f0;
-    transform: scale(1.05);
+.check-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(99, 102, 241, 0.35);
 }
 
-/* MAIN BUTTONS */
+.check-btn:active {
+    transform: scale(0.97);
+}
+
+/* BUTTONS */
 .row {
     display: flex;
     gap: 10px;
@@ -147,7 +136,7 @@ button.action {
     width: 0%;
     height: 100%;
     background: linear-gradient(90deg,#16a34a,#22c55e);
-    transition: 0.2s;
+    transition: width 0.2s ease;
 }
 
 /* STATUS */
@@ -189,19 +178,14 @@ button.action {
 
 <textarea id="dataBox" placeholder="✍️ الصق أو ارفع ملف Excel هنا..."></textarea>
 
-<!-- 🔁 REPEAT BOX FINAL -->
+<!-- REPEAT + CHECK (UNCHANGED STRUCTURE) -->
 <div class="repeat-wrapper">
 
 <label>🔁 Repeat</label>
 
 <input id="repeatCount" type="number" min="0" value="0">
 
-<div class="mini-actions">
-
-<button id="checkBtn" class="mini-btn">🔍</button>
-<button id="reportBtn" class="mini-btn">📊</button>
-
-</div>
+<button id="checkBtn" class="check-btn">🔍 Check</button>
 
 </div>
 
@@ -235,4 +219,5 @@ button.action {
 <script src="app.js"></script>
 
 </body>
+
 </html>

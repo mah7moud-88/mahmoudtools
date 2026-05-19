@@ -13,15 +13,51 @@ const progressDash = document.getElementById("progressDash");
 const timeDash = document.getElementById("timeDash");
 
 const checkBtn = document.getElementById("checkBtn");
-const reportBtn = document.getElementById("reportBtn");
 
 let stopRequested = false;
+let startTime = 0;
+let timerInterval = null;
+
 let lastSourceValues = [];
+
+/* TIMER */
+function startTimer() {
+    startTime = Date.now();
+    clearInterval(timerInterval);
+
+    timerInterval = setInterval(() => {
+        const sec = Math.floor((Date.now() - startTime) / 1000);
+        timeDash.innerText = sec + "s";
+    }, 500);
+}
+
+function stopTimer() {
+    clearInterval(timerInterval);
+}
 
 /* STATUS */
 function setStatus(text) {
     status.innerText = text;
 }
+
+/* DASHBOARD */
+function updateDashboard(total, progress) {
+    totalDash.innerText = total || 0;
+    progressDash.innerText = (progress || 0) + "%";
+}
+
+/* LIVE COUNT (FIXED SAFETY) */
+function updateLiveCount() {
+
+    const values = (dataBox.value || "")
+        .split("\n")
+        .map(v => v.trim())
+        .filter(v => v !== "");
+
+    loadedCount.innerText = values.length;
+}
+
+dataBox.addEventListener("input", updateLiveCount);
 
 /* UPLOAD */
 uploadBtn.onclick = () => fileInput.click();
@@ -45,8 +81,9 @@ header: 1,
 defval: ""
 });
 
-const cleaned = json.flat()
-.map(v => String(v).trim())
+const cleaned = (json || [])
+.flat()
+.map(v => String(v || "").trim())
 .filter(v => v !== "");
 
 dataBox.value = cleaned.join("\n");
@@ -80,14 +117,16 @@ document.getElementById("stopBtn").onclick = () => {
 
 stopRequested = true;
 setStatus("Stopped ⛔");
+
+stopTimer();
 };
 
-/* PASTE */
+/* PASTE (UNCHANGED LOGIC) */
 document.getElementById("run").onclick = async () => {
 
 const repeatTimes = parseInt(repeatCountEl.value || "0");
 
-const baseValues = dataBox.value
+const baseValues = (dataBox.value || "")
 .split("\n")
 .map(v => v.trim())
 .filter(v => v !== "");
@@ -113,6 +152,10 @@ progressBar.style.width = "0%";
 
 setStatus("Processing ⚡");
 
+startTimer();
+
+updateDashboard(values.length, 0);
+
 try {
 
 await Excel.run(async (context) => {
@@ -121,6 +164,7 @@ const sheet = context.workbook.worksheets.getActiveWorksheet();
 
 const selected = context.workbook.getSelectedRange();
 selected.load("rowIndex,columnIndex");
+
 await context.sync();
 
 const startRow = selected.rowIndex;
@@ -152,6 +196,7 @@ valueIndex++;
 const percent = Math.round((valueIndex / values.length) * 100);
 
 progressBar.style.width = percent + "%";
+updateDashboard(values.length, percent);
 
 }
 
@@ -164,15 +209,18 @@ progressBar.style.width = "100%";
 
 setStatus("Done 🚀");
 
+stopTimer();
+
 });
 
 } catch (err) {
 console.log(err);
 setStatus("Error ❌ " + err.message);
+stopTimer();
 }
 };
 
-/* CHECK */
+/* CHECK (FIXED SAFETY + SAME LOGIC) */
 checkBtn.onclick = async () => {
 
 setStatus("Checking... 🔍");
@@ -183,68 +231,27 @@ await Excel.run(async (context) => {
 
 const range = context.workbook.getSelectedRange();
 range.load("values");
+
 await context.sync();
 
-const excelValues = range.values.flat();
+const excelValues = (range.values || []).flat();
 
 const pastedCount = excelValues
-.map(v => String(v).trim())
+.map(v => String(v || "").trim())
 .filter(v => v !== "")
 .length;
 
-setStatus(`📊 Pasted: ${pastedCount}`);
+const sourceCount = lastSourceValues.length || 0;
+
+setStatus(
+`📊 Pasted: ${pastedCount} value(s) | Source: ${sourceCount}`
+);
 
 });
 
 } catch (err) {
+console.log(err);
 setStatus("Check Error ❌ " + err.message);
-}
-
-};
-
-/* REPORT */
-reportBtn.onclick = async () => {
-
-setStatus("Generating Report... 📊");
-
-try {
-
-await Excel.run(async (context) => {
-
-const range = context.workbook.getSelectedRange();
-range.load("values, rowCount, columnCount");
-await context.sync();
-
-if (range.columnCount < 2) {
-setStatus("⚠️ Select 2 columns first");
-return;
-}
-
-const data = range.values;
-
-const reportData = [["Account", "Value"]];
-
-for (let i = 0; i < range.rowCount; i++) {
-
-if (data[i][0] || data[i][1]) {
-reportData.push([data[i][0], data[i][1]]);
-}
-
-}
-
-const wb = XLSX.utils.book_new();
-const ws = XLSX.utils.aoa_to_sheet(reportData);
-
-XLSX.utils.book_append_sheet(wb, ws, "Report");
-
-XLSX.writeFile(wb, "Excel_Report.xlsx");
-
-setStatus("Report Downloaded ✅");
-
-});
-
-} catch (err) {
-setStatus("Report Error ❌ " + err.message);
 }
 
 };
