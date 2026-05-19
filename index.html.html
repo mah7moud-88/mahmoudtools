@@ -17,7 +17,6 @@ body {
     justify-content: center;
 }
 
-/* CARD */
 .card {
     width: 360px;
     background: white;
@@ -119,13 +118,7 @@ button.action {
     font-size: 12px;
     text-align: center;
     color: #666;
-    transition: 0.3s;
 }
-
-/* SMART STATUS COLORS */
-.status.success { color: #16a34a; }
-.status.error { color: #dc2626; }
-.status.running { color: #2563eb; }
 
 /* DASHBOARD */
 .dashboard {
@@ -139,14 +132,20 @@ button.action {
     margin-top: 10px;
 }
 
-/* ANIMATION */
+.dashboard div {
+    min-width: 70px;
+    text-align: center;
+    font-weight: 600;
+}
+
+/* STATUS ANIMATION */
+.status.animate {
+    animation: fadeIn 0.3s ease;
+}
+
 @keyframes fadeIn {
     from { opacity: 0.5; transform: translateY(3px); }
     to { opacity: 1; transform: translateY(0); }
-}
-
-.status.animate {
-    animation: fadeIn 0.3s ease;
 }
 </style>
 </head>
@@ -163,13 +162,11 @@ button.action {
 
 <textarea id="dataBox" placeholder="✍️ الصق أو ارفع ملف Excel هنا..."></textarea>
 
-<!-- REPEAT -->
 <div class="repeat-wrapper">
 <label>🔁 Repeat</label>
 <input id="repeatCount" type="number" min="0" value="0">
 </div>
 
-<!-- BUTTONS -->
 <div class="row">
 <button id="uploadBtn" class="action upload-btn">📂 Upload</button>
 <button id="clearBtn" class="action clear-btn">🧹 Clear</button>
@@ -179,10 +176,8 @@ button.action {
 
 <input type="file" id="fileInput" accept=".xlsx,.xls" hidden />
 
-<!-- STATUS -->
 <div class="status" id="status">🟢 Ready</div>
 
-<!-- DASHBOARD (NEW UX) -->
 <div class="dashboard">
 <div>📥 <span id="loadedCount">0</span></div>
 <div>📊 <span id="totalDash">0</span></div>
@@ -190,7 +185,6 @@ button.action {
 <div>⏱️ <span id="timeDash">0s</span></div>
 </div>
 
-<!-- PROGRESS -->
 <div class="progress-container">
 <div class="progress-bar" id="progressBar"></div>
 </div>
@@ -199,207 +193,7 @@ button.action {
 
 </div>
 
-<script>
-Office.onReady(() => {
-
-const uploadBtn = document.getElementById("uploadBtn");
-const fileInput = document.getElementById("fileInput");
-const dataBox = document.getElementById("dataBox");
-const repeatCountEl = document.getElementById("repeatCount");
-const status = document.getElementById("status");
-const progressBar = document.getElementById("progressBar");
-
-const loadedCount = document.getElementById("loadedCount");
-const totalDash = document.getElementById("totalDash");
-const progressDash = document.getElementById("progressDash");
-const timeDash = document.getElementById("timeDash");
-
-let stopRequested = false;
-let startTime;
-let timerInterval;
-
-/* TIMER */
-function startTimer() {
-    startTime = Date.now();
-    timerInterval = setInterval(() => {
-        const sec = Math.floor((Date.now() - startTime) / 1000);
-        timeDash.innerText = sec + "s";
-    }, 1000);
-}
-
-/* STATUS */
-function setStatus(text, type = "") {
-    status.className = "status " + type;
-    status.innerText = text;
-    status.classList.add("animate");
-
-    setTimeout(() => status.classList.remove("animate"), 300);
-}
-
-/* LIVE COUNT */
-function updateDashboard(total, progress) {
-    totalDash.innerText = total;
-    progressDash.innerText = progress + "%";
-}
-
-/* UPLOAD */
-uploadBtn.onclick = () => fileInput.click();
-
-fileInput.onchange = (e) => {
-
-const file = e.target.files[0];
-if (!file) return;
-
-const reader = new FileReader();
-
-reader.onload = (event) => {
-
-const data = new Uint8Array(event.target.result);
-const workbook = XLSX.read(data, { type: "array" });
-
-const sheet = workbook.Sheets[workbook.SheetNames[0]];
-
-const json = XLSX.utils.sheet_to_json(sheet, {
-header: 1,
-defval: ""
-});
-
-const cleaned = json.flat()
-.map(v => String(v).trim())
-.filter(v => v !== "");
-
-dataBox.value = cleaned.join("\n");
-
-loadedCount.innerText = cleaned.length;
-
-setStatus("Loaded ✅", "success");
-
-};
-
-reader.readAsArrayBuffer(file);
-};
-
-/* CLEAR */
-document.getElementById("clearBtn").onclick = () => {
-
-dataBox.value = "";
-progressBar.style.width = "0%";
-
-loadedCount.innerText = "0";
-totalDash.innerText = "0";
-progressDash.innerText = "0%";
-timeDash.innerText = "0s";
-
-setStatus("Cleared 🧹");
-};
-
-/* STOP */
-document.getElementById("stopBtn").onclick = () => {
-stopRequested = true;
-setStatus("Stopping ⛔", "error");
-};
-
-/* PASTE (UNCHANGED LOGIC + UX ONLY) */
-document.getElementById("run").onclick = async () => {
-
-const repeatTimes = parseInt(repeatCountEl.value || "0");
-
-const baseValues = dataBox.value
-.split("\n")
-.map(v => v.trim())
-.filter(v => v !== "");
-
-let values = [];
-
-if (repeatTimes <= 0) values = baseValues;
-else {
-for (const v of baseValues) {
-for (let i = 0; i < repeatTimes; i++) {
-values.push(v);
-}}}
-
-if (!values.length) {
-alert("اكتب أو ارفع بيانات");
-return;
-}
-
-stopRequested = false;
-progressBar.style.width = "0%";
-
-setStatus("Processing ⚡", "running");
-
-startTimer();
-updateDashboard(values.length, 0);
-
-try {
-
-await Excel.run(async (context) => {
-
-const sheet = context.workbook.worksheets.getActiveWorksheet();
-
-const selected = context.workbook.getSelectedRange();
-selected.load("rowIndex,columnIndex");
-await context.sync();
-
-const startRow = selected.rowIndex;
-const col = selected.columnIndex;
-
-const scanRange = sheet.getRangeByIndexes(startRow, col, 100000, 1);
-
-const visibleRange = scanRange.getSpecialCells(Excel.SpecialCellType.visible);
-
-visibleRange.load("areas/items/rowCount");
-
-await context.sync();
-
-let valueIndex = 0;
-
-for (const area of visibleRange.areas.items) {
-
-for (let r = 0; r < area.rowCount; r++) {
-
-if (stopRequested) {
-setStatus("Stopped ⛔", "error");
-break;
-}
-
-if (valueIndex >= values.length) break;
-
-const cell = area.getCell(r, 0);
-cell.values = [[values[valueIndex]]];
-
-valueIndex++;
-
-const percent = Math.round((valueIndex / values.length) * 100);
-
-progressBar.style.width = percent + "%";
-updateDashboard(values.length, percent);
-
-}
-
-if (stopRequested) break;
-}
-
-await context.sync();
-
-progressBar.style.width = "100%";
-
-setStatus("Done 🚀", "success");
-
-clearInterval(timerInterval);
-
-});
-
-} catch (err) {
-console.log(err);
-setStatus("Error ❌ " + err.message, "error");
-clearInterval(timerInterval);
-}
-
-};
-
-});
-</script>
+<script src="app.js"></script>
 
 </body>
 </html>

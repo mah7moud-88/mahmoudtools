@@ -1,289 +1,261 @@
 Office.onReady(() => {
 
-    const uploadBtn = document.getElementById("uploadBtn");
-    const fileInput = document.getElementById("fileInput");
-    const dataBox = document.getElementById("dataBox");
-    const repeatCountEl = document.getElementById("repeatCount");
-    const status = document.getElementById("status");
-    const countEl = document.getElementById("count");
-    const liveCountEl = document.getElementById("liveCount");
-    const progressBar = document.getElementById("progressBar");
+const uploadBtn = document.getElementById("uploadBtn");
+const fileInput = document.getElementById("fileInput");
+const dataBox = document.getElementById("dataBox");
+const repeatCountEl = document.getElementById("repeatCount");
+const status = document.getElementById("status");
+const progressBar = document.getElementById("progressBar");
 
-    // ===== NEW UX ELEMENTS =====
-    const loadedCount = document.getElementById("loadedCount");
-    const totalDash = document.getElementById("totalDash");
-    const progressDash = document.getElementById("progressDash");
-    const timeDash = document.getElementById("timeDash");
+const loadedCount = document.getElementById("loadedCount");
+const totalDash = document.getElementById("totalDash");
+const progressDash = document.getElementById("progressDash");
+const timeDash = document.getElementById("timeDash");
 
-    let stopRequested = false;
-    let startTime;
-    let timerInterval;
+let stopRequested = false;
+let startTime = 0;
+let timerInterval = null;
 
-    // ======================
-    // TIMER
-    // ======================
-    function startTimer() {
+/* ======================
+TIMER FIX
+====================== */
+function startTimer() {
 
-        startTime = Date.now();
+    startTime = Date.now();
 
-        clearInterval(timerInterval);
+    clearInterval(timerInterval);
 
-        timerInterval = setInterval(() => {
+    timerInterval = setInterval(() => {
 
-            const sec = Math.floor((Date.now() - startTime) / 1000);
+        const sec = Math.floor((Date.now() - startTime) / 1000);
+
+        if (timeDash) {
             timeDash.innerText = sec + "s";
-
-        }, 1000);
-    }
-
-    function stopTimer() {
-        clearInterval(timerInterval);
-    }
-
-    // ======================
-    // STATUS (UX WRAPPER)
-    // ======================
-    function setStatus(text) {
-
-        status.innerText = text;
-
-        status.style.transform = "translateY(0px)";
-        status.style.opacity = "1";
-    }
-
-    // ======================
-    // DASHBOARD UPDATE
-    // ======================
-    function updateDashboard(total, progress) {
-
-        if (totalDash) totalDash.innerText = total;
-        if (progressDash) progressDash.innerText = progress + "%";
-    }
-
-    // ======================
-    // Live Count
-    // ======================
-    function updateLiveCount() {
-
-        const values = dataBox.value
-            .split("\n")
-            .map(v => v.trim())
-            .filter(v => v !== "");
-
-        liveCountEl.innerText = values.length;
-    }
-
-    dataBox.addEventListener("input", updateLiveCount);
-
-    // ======================
-    // Upload
-    // ======================
-    uploadBtn.onclick = () => {
-        fileInput.value = "";
-        fileInput.click();
-    };
-
-    fileInput.onchange = (e) => {
-
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-
-        reader.onload = (event) => {
-
-            const data = new Uint8Array(event.target.result);
-            const workbook = XLSX.read(data, { type: "array" });
-
-            const sheet = workbook.Sheets[workbook.SheetNames[0]];
-
-            const json = XLSX.utils.sheet_to_json(sheet, {
-                header: 1,
-                defval: ""
-            });
-
-            const cleaned = json
-                .flat()
-                .map(v => String(v).trim())
-                .filter(v => v !== "");
-
-            dataBox.value = cleaned.join("\n");
-
-            updateLiveCount();
-
-            // ===== UX SYNC =====
-            if (loadedCount) loadedCount.innerText = cleaned.length;
-
-            setStatus("Loaded ✅");
-
-        };
-
-        reader.readAsArrayBuffer(file);
-    };
-
-    // ======================
-    // Clear
-    // ======================
-    document.getElementById("clearBtn").onclick = () => {
-
-        dataBox.value = "";
-
-        updateLiveCount();
-
-        countEl.innerText = "0";
-
-        progressBar.style.width = "0%";
-
-        // ===== RESET DASHBOARD =====
-        if (loadedCount) loadedCount.innerText = "0";
-        if (totalDash) totalDash.innerText = "0";
-        if (progressDash) progressDash.innerText = "0%";
-        if (timeDash) timeDash.innerText = "0s";
-
-        stopTimer();
-
-        setStatus("Cleared 🧹");
-    };
-
-    // ======================
-    // Stop
-    // ======================
-    document.getElementById("stopBtn").onclick = () => {
-
-        stopRequested = true;
-
-        setStatus("⛔ Stopping...");
-        stopTimer();
-    };
-
-    // ======================
-    // Paste (UNCHANGED LOGIC)
-    // ======================
-    document.getElementById("run").onclick = async () => {
-
-        const repeatTimes = parseInt(repeatCountEl.value || "0");
-
-        const baseValues = dataBox.value
-            .split("\n")
-            .map(v => v.trim())
-            .filter(v => v !== "");
-
-        updateLiveCount();
-
-        let values = [];
-
-        // ======================
-        // Repeat Logic (UNCHANGED)
-        // ======================
-        if (repeatTimes <= 0) {
-
-            values = baseValues;
-
-        } else {
-
-            for (const v of baseValues) {
-
-                for (let i = 0; i < repeatTimes; i++) {
-
-                    values.push(v);
-                }
-            }
         }
 
-        if (!values.length) {
-            alert("اكتب أو ارفع بيانات");
-            return;
-        }
+    }, 500);
+}
 
-        stopRequested = false;
-        progressBar.style.width = "0%";
+function stopTimer() {
+    clearInterval(timerInterval);
+}
 
-        setStatus("Processing... ⏳");
+/* ======================
+STATUS
+====================== */
+function setStatus(text, type = "") {
 
-        startTimer();
-        updateDashboard(values.length, 0);
+    status.className = "status " + type;
+    status.innerText = text;
+}
 
-        try {
+/* ======================
+DASHBOARD UPDATE
+====================== */
+function updateDashboard(total, progress) {
 
-            await Excel.run(async (context) => {
+    if (totalDash) totalDash.innerText = total || 0;
 
-                const sheet = context.workbook.worksheets.getActiveWorksheet();
+    if (progressDash) {
+        progressDash.innerText = (progress || 0) + "%";
+        progressDash.style.color = progress > 50 ? "#16a34a" : "#2563eb";
+    }
+}
 
-                const selected = context.workbook.getSelectedRange();
-                selected.load("rowIndex,columnIndex");
+/* ======================
+LIVE COUNT
+====================== */
+function updateLiveCount() {
 
-                await context.sync();
+    const values = dataBox.value
+        .split("\n")
+        .map(v => v.trim())
+        .filter(v => v !== "");
 
-                const startRow = selected.rowIndex;
-                const col = selected.columnIndex;
+    if (loadedCount) {
+        loadedCount.innerText = values.length;
+    }
+}
 
-                const scanRange = sheet.getRangeByIndexes(
-                    startRow,
-                    col,
-                    100000,
-                    1
-                );
+dataBox.addEventListener("input", updateLiveCount);
 
-                const visibleRange = scanRange.getSpecialCells(
-                    Excel.SpecialCellType.visible
-                );
+/* ======================
+UPLOAD
+====================== */
+uploadBtn.onclick = () => fileInput.click();
 
-                visibleRange.load("areas/items/rowCount");
+fileInput.onchange = (e) => {
 
-                await context.sync();
+const file = e.target.files[0];
+if (!file) return;
 
-                let valueIndex = 0;
+const reader = new FileReader();
 
-                for (const area of visibleRange.areas.items) {
+reader.onload = (event) => {
 
-                    for (let r = 0; r < area.rowCount; r++) {
+const data = new Uint8Array(event.target.result);
+const workbook = XLSX.read(data, { type: "array" });
 
-                        if (stopRequested) {
-                            setStatus("⛔ Stopped");
-                            break;
-                        }
+const sheet = workbook.Sheets[workbook.SheetNames[0]];
 
-                        if (valueIndex >= values.length) break;
+const json = XLSX.utils.sheet_to_json(sheet, {
+header: 1,
+defval: ""
+});
 
-                        const cell = area.getCell(r, 0);
+const cleaned = json.flat()
+.map(v => String(v).trim())
+.filter(v => v !== "");
 
-                        cell.values = [[values[valueIndex]]];
+dataBox.value = cleaned.join("\n");
 
-                        valueIndex++;
+updateLiveCount();
 
-                        const percent = Math.round((valueIndex / values.length) * 100);
+setStatus("Loaded ✅", "success");
 
-                        progressBar.style.width = percent + "%";
+loadedCount.innerText = cleaned.length;
 
-                        // ===== UX LIVE UPDATE =====
-                        updateDashboard(values.length, percent);
-                    }
+};
 
-                    if (stopRequested) break;
-                }
+reader.readAsArrayBuffer(file);
+};
 
-                await context.sync();
+/* ======================
+CLEAR
+====================== */
+document.getElementById("clearBtn").onclick = () => {
 
-                countEl.innerText = valueIndex;
+dataBox.value = "";
 
-                progressBar.style.width = "100%";
+progressBar.style.width = "0%";
 
-                if (!stopRequested) {
-                    setStatus("Done 🚀");
-                }
+loadedCount.innerText = "0";
+totalDash.innerText = "0";
+progressDash.innerText = "0%";
+timeDash.innerText = "0s";
 
-                stopTimer();
+stopTimer();
 
-            });
+setStatus("Cleared 🧹");
+};
 
-        } catch (err) {
+/* ======================
+STOP
+====================== */
+document.getElementById("stopBtn").onclick = () => {
 
-            console.log(err);
+stopRequested = true;
+setStatus("Stopped ⛔", "error");
 
-            setStatus("Error ❌ " + err.message);
+stopTimer();
+};
 
-            stopTimer();
-        }
-    };
+/* ======================
+PASTE (UNCHANGED LOGIC)
+====================== */
+document.getElementById("run").onclick = async () => {
+
+const repeatTimes = parseInt(repeatCountEl.value || "0");
+
+const baseValues = dataBox.value
+.split("\n")
+.map(v => v.trim())
+.filter(v => v !== "");
+
+let values = [];
+
+if (repeatTimes <= 0) {
+values = baseValues;
+} else {
+for (const v of baseValues) {
+for (let i = 0; i < repeatTimes; i++) {
+values.push(v);
+}}}
+
+if (!values.length) {
+alert("اكتب أو ارفع بيانات");
+return;
+}
+
+stopRequested = false;
+progressBar.style.width = "0%";
+
+setStatus("Processing ⚡", "running");
+
+startTimer();
+
+updateDashboard(values.length, 0);
+
+try {
+
+await Excel.run(async (context) => {
+
+const sheet = context.workbook.worksheets.getActiveWorksheet();
+
+const selected = context.workbook.getSelectedRange();
+selected.load("rowIndex,columnIndex");
+await context.sync();
+
+const startRow = selected.rowIndex;
+const col = selected.columnIndex;
+
+const scanRange = sheet.getRangeByIndexes(startRow, col, 100000, 1);
+
+const visibleRange = scanRange.getSpecialCells(Excel.SpecialCellType.visible);
+
+visibleRange.load("areas/items/rowCount");
+
+await context.sync();
+
+let valueIndex = 0;
+
+for (const area of visibleRange.areas.items) {
+
+for (let r = 0; r < area.rowCount; r++) {
+
+if (stopRequested) {
+setStatus("Stopped ⛔", "error");
+break;
+}
+
+if (valueIndex >= values.length) break;
+
+const cell = area.getCell(r, 0);
+
+cell.values = [[values[valueIndex]]];
+
+valueIndex++;
+
+const percent = Math.round((valueIndex / values.length) * 100);
+
+progressBar.style.width = percent + "%";
+
+updateDashboard(values.length, percent);
+
+}
+
+if (stopRequested) break;
+}
+
+await context.sync();
+
+progressBar.style.width = "100%";
+
+setStatus("Done 🚀", "success");
+
+stopTimer();
+
+});
+
+} catch (err) {
+
+console.log(err);
+
+setStatus("Error ❌ " + err.message, "error");
+
+stopTimer();
+}
+
+};
 
 });
