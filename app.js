@@ -10,31 +10,45 @@ const progressBar = document.getElementById("progressBar");
 const checkBtn = document.getElementById("checkBtn");
 const reportBtn = document.getElementById("reportBtn");
 
+const loadedCount = document.getElementById("loadedCount");
+const totalDash = document.getElementById("totalDash");
+const progressDash = document.getElementById("progressDash");
+const timeDash = document.getElementById("timeDash");
+
 let stopRequested = false;
+let startTime = 0;
+let timerInterval = null;
 let lastSourceValues = [];
 
-/* =========================
-   LIVE COUNT
-========================= */
+/* TIMER */
+function startTimer() {
+startTime = Date.now();
+timerInterval = setInterval(() => {
+timeDash.innerText = Math.floor((Date.now() - startTime)/1000) + "s";
+}, 500);
+}
+
+function stopTimer() {
+clearInterval(timerInterval);
+}
+
+/* LIVE COUNT */
 function updateLiveCount() {
+const values = (dataBox.value || "")
+.split("\n")
+.map(v => v.trim())
+.filter(v => v !== "");
 
-    const values = (dataBox.value || "")
-        .split("\n")
-        .map(v => v.trim())
-        .filter(v => v !== "");
-
-    status.innerText = `🟢 Ready | Items: ${values.length}`;
+loadedCount.innerText = values.length;
+status.innerText = "Ready | " + values.length + " items";
 }
 
 dataBox.addEventListener("input", updateLiveCount);
 
-/* =========================
-   UPLOAD EXCEL
-========================= */
+/* UPLOAD */
 uploadBtn.onclick = () => fileInput.click();
 
 fileInput.onchange = (e) => {
-
 const file = e.target.files[0];
 if (!file) return;
 
@@ -58,38 +72,38 @@ const cleaned = (json || [])
 .filter(v => v !== "");
 
 dataBox.value = cleaned.join("\n");
+loadedCount.innerText = cleaned.length;
 
-status.innerText = `Loaded ✅ (${cleaned.length})`;
+status.innerText = "Loaded ✅";
 
 };
 
 reader.readAsArrayBuffer(file);
 };
 
-/* =========================
-   CLEAR
-========================= */
+/* CLEAR */
 document.getElementById("clearBtn").onclick = () => {
 
 dataBox.value = "";
 progressBar.style.width = "0%";
 
+loadedCount.innerText = "0";
+totalDash.innerText = "0";
+progressDash.innerText = "0%";
+timeDash.innerText = "0s";
+
 status.innerText = "Cleared 🧹";
+
 };
 
-/* =========================
-   STOP
-========================= */
+/* STOP */
 document.getElementById("stopBtn").onclick = () => {
-
 stopRequested = true;
 status.innerText = "Stopped ⛔";
-
+stopTimer();
 };
 
-/* =========================
-   PASTE LOGIC
-========================= */
+/* PASTE */
 document.getElementById("run").onclick = async () => {
 
 const repeatTimes = parseInt(repeatCountEl.value || "0");
@@ -106,12 +120,11 @@ else {
 for (const v of baseValues) {
 for (let i = 0; i < repeatTimes; i++) {
 values.push(v);
-}}}
-
-if (!values.length) {
-alert("اكتب أو ارفع بيانات");
-return;
 }
+}
+}
+
+if (!values.length) return alert("اكتب أو ارفع بيانات");
 
 lastSourceValues = [...values];
 
@@ -119,6 +132,8 @@ stopRequested = false;
 progressBar.style.width = "0%";
 
 status.innerText = "Processing ⚡";
+
+startTimer();
 
 try {
 
@@ -134,30 +149,26 @@ await context.sync();
 const startRow = selected.rowIndex;
 const col = selected.columnIndex;
 
-const scanRange = sheet.getRangeByIndexes(startRow, col, 100000, 1);
+const range = sheet.getRangeByIndexes(startRow, col, 100000, 1);
 
-const visibleRange = scanRange.getSpecialCells(Excel.SpecialCellType.visible);
+const visible = range.getSpecialCells(Excel.SpecialCellType.visible);
 
-visibleRange.load("areas/items/rowCount");
+visible.load("areas/items/rowCount");
 
 await context.sync();
 
-let valueIndex = 0;
+let i = 0;
 
-for (const area of visibleRange.areas.items) {
+for (const area of visible.areas.items) {
 
 for (let r = 0; r < area.rowCount; r++) {
 
 if (stopRequested) break;
+if (i >= values.length) break;
 
-if (valueIndex >= values.length) break;
+area.getCell(r,0).values = [[values[i++]]];
 
-const cell = area.getCell(r, 0);
-cell.values = [[values[valueIndex]]];
-
-valueIndex++;
-
-const percent = Math.round((valueIndex / values.length) * 100);
+let percent = Math.round((i / values.length) * 100);
 progressBar.style.width = percent + "%";
 
 }
@@ -169,105 +180,65 @@ await context.sync();
 
 progressBar.style.width = "100%";
 status.innerText = "Done 🚀";
+stopTimer();
 
 });
 
 } catch (err) {
-console.log(err);
 status.innerText = "Error ❌ " + err.message;
+stopTimer();
 }
 
 };
 
-/* =========================
-   CHECK BUTTON
-========================= */
+/* CHECK */
 checkBtn.onclick = async () => {
-
-status.innerText = "Checking... 🔍";
-
-try {
 
 await Excel.run(async (context) => {
 
 const range = context.workbook.getSelectedRange();
 range.load("values");
-
 await context.sync();
 
-const excelValues = (range.values || []).flat()
-.map(v => String(v || "").trim())
-.filter(v => v !== "");
+const excel = (range.values || []).flat().filter(v => v !== "");
+const box = (dataBox.value || "").split("\n").filter(v => v.trim() !== "");
 
-const pastedCount = excelValues.length;
-const sourceCount = (dataBox.value || "")
-.split("\n")
-.filter(v => v.trim() !== "").length;
-
-status.innerText =
-`📊 Excel: ${pastedCount} | Box: ${sourceCount}`;
+status.innerText = `📊 Excel: ${excel.length} | Box: ${box.length}`;
 
 });
 
-} catch (err) {
-console.log(err);
-status.innerText = "Check Error ❌ " + err.message;
-}
-
 };
 
-/* =========================
-   REPORT BUTTON
-========================= */
+/* REPORT */
 reportBtn.onclick = async () => {
-
-status.innerText = "Generating Report... 📊";
-
-try {
 
 await Excel.run(async (context) => {
 
 const range = context.workbook.getSelectedRange();
-range.load("values, rowCount, columnCount");
+range.load("values,rowCount,columnCount");
 
 await context.sync();
 
-if (range.columnCount < 2) {
-status.innerText = "⚠️ Select 2 columns (Account + Value)";
-return;
+if (range.columnCount < 2)
+return status.innerText = "Select 2 columns";
+
+let data = range.values;
+let report = [["Account","Value"]];
+
+for (let i=0;i<range.rowCount;i++){
+report.push([data[i][0], data[i][1]]);
 }
 
-const data = range.values;
-
-const report = [["Account", "Value"]];
-
-for (let i = 0; i < range.rowCount; i++) {
-
-const acc = data[i][0];
-const val = data[i][1];
-
-if (acc !== "" || val !== "") {
-report.push([acc, val]);
-}
-
-}
-
-// download Excel file
 const wb = XLSX.utils.book_new();
 const ws = XLSX.utils.aoa_to_sheet(report);
 
 XLSX.utils.book_append_sheet(wb, ws, "Report");
 
-XLSX.writeFile(wb, "Excel_Report.xlsx");
+XLSX.writeFile(wb, "report.xlsx");
 
-status.innerText = "Report Downloaded ✅";
+status.innerText = "Report downloaded ✅";
 
 });
-
-} catch (err) {
-console.log(err);
-status.innerText = "Report Error ❌ " + err.message;
-}
 
 };
 

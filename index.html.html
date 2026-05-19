@@ -18,7 +18,6 @@ body {
     justify-content: center;
 }
 
-/* CARD */
 .card {
     width: 360px;
     background: white;
@@ -54,7 +53,7 @@ textarea {
     box-sizing: border-box;
 }
 
-/* REPEAT WRAPPER */
+/* REPEAT */
 .repeat-wrapper {
     margin-top: 12px;
     display: flex;
@@ -63,71 +62,31 @@ textarea {
     background: #f8fafc;
     border: 1px solid #e5e7eb;
     border-radius: 12px;
-    padding: 10px 10px;
+    padding: 10px;
 }
 
-/* INPUT */
 #repeatCount {
     width: 80px;
-    padding: 7px 8px;
+    padding: 7px;
     border-radius: 10px;
     border: 1px solid #d1d5db;
-    font-size: 13px;
 }
 
-/* SMALL ACTION BUTTONS */
-.check-btn {
-    width: 36px;
-    height: 34px;
-    padding: 0;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    color: white;
-    font-size: 14px;
-    transition: 0.2s;
-}
-
-.check-btn:hover {
-    transform: translateY(-1px);
-}
-
-/* BUTTON GROUP */
+/* SMALL BUTTONS */
 .btn-group {
     display: flex;
     gap: 6px;
     margin-left: auto;
 }
 
-/* BUTTON COLORS */
-.upload-btn { background: #2563eb; }
-.clear-btn { background: #ef4444; }
-.paste-btn { background: #16a34a; }
-.stop-btn { background: #f59e0b; }
-
-/* PROGRESS */
-.progress-container {
-    width: 100%;
-    height: 8px;
-    background: #e5e7eb;
-    border-radius: 20px;
-    overflow: hidden;
-    margin-top: 10px;
-}
-
-.progress-bar {
-    width: 0%;
-    height: 100%;
-    background: linear-gradient(90deg,#16a34a,#22c55e);
-    transition: width 0.2s ease;
-}
-
-/* STATUS */
-.status {
-    margin-top: 10px;
-    font-size: 12px;
-    text-align: center;
-    color: #666;
+.small-btn {
+    width: 36px;
+    height: 34px;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
 }
 
 /* MAIN BUTTONS */
@@ -135,7 +94,6 @@ textarea {
     display: flex;
     gap: 10px;
     margin-top: 12px;
-    flex-wrap: wrap;
 }
 
 button.action {
@@ -148,7 +106,54 @@ button.action {
     font-size: 13px;
 }
 
+.upload-btn { background: #2563eb; }
+.clear-btn { background: #ef4444; }
+.paste-btn { background: #16a34a; }
+.stop-btn { background: #f59e0b; }
+
+/* STATUS */
+.status {
+    margin-top: 10px;
+    font-size: 12px;
+    text-align: center;
+    color: #666;
+}
+
+/* DASHBOARD */
+.dashboard {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    background: #f8fafc;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    margin-top: 10px;
+}
+
+.dashboard div {
+    min-width: 70px;
+    text-align: center;
+}
+
+/* PROGRESS */
+.progress-container {
+    width: 100%;
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 20px;
+    margin-top: 10px;
+}
+
+.progress-bar {
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(90deg,#16a34a,#22c55e);
+    transition: 0.2s;
+}
+
 </style>
+
 </head>
 
 <body>
@@ -163,7 +168,7 @@ button.action {
 
 <textarea id="dataBox" placeholder="✍️ الصق أو ارفع ملف Excel هنا..."></textarea>
 
-<!-- REPEAT + BUTTONS -->
+<!-- REPEAT + ACTIONS -->
 <div class="repeat-wrapper">
 
 <label>🔁 Repeat</label>
@@ -172,9 +177,8 @@ button.action {
 
 <div class="btn-group">
 
-<button id="checkBtn" class="check-btn" style="background:#6366f1;">🔍</button>
-
-<button id="reportBtn" class="check-btn" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9);">📊</button>
+<button id="checkBtn" class="small-btn" style="background:#6366f1;">🔍</button>
+<button id="reportBtn" class="small-btn" style="background:#8b5cf6;">📊</button>
 
 </div>
 
@@ -194,6 +198,17 @@ button.action {
 
 <div class="status" id="status">🟢 Ready</div>
 
+<!-- DASHBOARD (RESTORED) -->
+<div class="dashboard">
+
+<div>📥 <span id="loadedCount">0</span></div>
+<div>📊 <span id="totalDash">0</span></div>
+<div>⚡ <span id="progressDash">0%</span></div>
+<div>⏱️ <span id="timeDash">0s</span></div>
+
+</div>
+
+<!-- PROGRESS -->
 <div class="progress-container">
 <div class="progress-bar" id="progressBar"></div>
 </div>
@@ -205,5 +220,4 @@ button.action {
 <script src="app.js"></script>
 
 </body>
-
 </html>
