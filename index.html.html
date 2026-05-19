@@ -52,7 +52,7 @@ textarea {
     box-sizing: border-box;
 }
 
-/* REPEAT */
+/* REPEAT WRAPPER */
 .repeat-wrapper {
     margin-top: 12px;
     display: flex;
@@ -64,12 +64,39 @@ textarea {
     padding: 10px 12px;
 }
 
+/* INPUT */
 #repeatCount {
     width: 90px;
     padding: 7px 10px;
     border-radius: 10px;
     border: 1px solid #d1d5db;
     font-size: 13px;
+}
+
+/* 🔥 CHECK BUTTON PREMIUM STYLE */
+.check-btn {
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    color: white;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    flex: none;
+    width: 85px;
+    height: 34px;
+    box-shadow: 0 4px 10px rgba(99, 102, 241, 0.25);
+}
+
+.check-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(99, 102, 241, 0.35);
+}
+
+.check-btn:active {
+    transform: scale(0.97);
 }
 
 /* BUTTONS */
@@ -94,7 +121,6 @@ button.action {
 .clear-btn { background: #ef4444; }
 .paste-btn { background: #16a34a; }
 .stop-btn { background: #f59e0b; }
-.check-btn { background: #6366f1; }
 
 /* PROGRESS */
 .progress-container {
@@ -156,7 +182,7 @@ button.action {
 <label>🔁 Repeat</label>
 <input id="repeatCount" type="number" min="0" value="0">
 
-<button id="checkBtn" class="action check-btn">🔍 Check</button>
+<button id="checkBtn" class="check-btn">🔍 Check</button>
 </div>
 
 <div class="row">
