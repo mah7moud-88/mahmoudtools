@@ -4,17 +4,16 @@ const uploadBtn = document.getElementById("uploadBtn");
 const fileInput = document.getElementById("fileInput");
 const dataBox = document.getElementById("dataBox");
 const repeatCountEl = document.getElementById("repeatCount");
-
 const status = document.getElementById("status");
 const progressBar = document.getElementById("progressBar");
+
+const checkBtn = document.getElementById("checkBtn");
+const reportBtn = document.getElementById("reportBtn");
 
 const loadedCount = document.getElementById("loadedCount");
 const totalDash = document.getElementById("totalDash");
 const progressDash = document.getElementById("progressDash");
 const timeDash = document.getElementById("timeDash");
-
-const checkBtn = document.getElementById("checkBtn");
-const reportBtn = document.getElementById("reportBtn");
 
 let stopRequested = false;
 let startTime = 0;
@@ -24,7 +23,7 @@ let timerInterval = null;
 function startTimer() {
 startTime = Date.now();
 timerInterval = setInterval(() => {
-timeDash.innerText = Math.floor((Date.now() - startTime)/1000) + "s";
+timeDash.innerText = Math.floor((Date.now() - startTime) / 1000) + "s";
 }, 500);
 }
 
@@ -53,6 +52,7 @@ dataBox.addEventListener("input", updateLiveCount);
 uploadBtn.onclick = () => fileInput.click();
 
 fileInput.onchange = (e) => {
+
 const file = e.target.files[0];
 if (!file) return;
 
@@ -70,7 +70,8 @@ header: 1,
 defval: ""
 });
 
-const cleaned = json.flat()
+const cleaned = (json || [])
+.flat()
 .map(v => String(v).trim())
 .filter(v => v !== "");
 
@@ -86,13 +87,17 @@ reader.readAsArrayBuffer(file);
 
 /* CLEAR */
 document.getElementById("clearBtn").onclick = () => {
+
 dataBox.value = "";
 progressBar.style.width = "0%";
+
 loadedCount.innerText = "0";
 totalDash.innerText = "0";
 progressDash.innerText = "0%";
 timeDash.innerText = "0s";
+
 setStatus("Cleared 🧹");
+
 };
 
 /* STOP */
@@ -132,6 +137,8 @@ setStatus("Processing ⚡");
 
 startTimer();
 
+try {
+
 await Excel.run(async (context) => {
 
 const sheet = context.workbook.worksheets.getActiveWorksheet();
@@ -141,21 +148,21 @@ selected.load("rowIndex,columnIndex");
 
 await context.sync();
 
-const range = sheet.getRangeByIndexes(
-selected.rowIndex,
-selected.columnIndex,
-100000,
-1
-);
+const startRow = selected.rowIndex;
+const col = selected.columnIndex;
+
+const range = sheet.getRangeByIndexes(startRow, col, 100000, 1);
 
 const visible = range.getSpecialCells(Excel.SpecialCellType.visible);
 
 visible.load("areas/items/rowCount");
+
 await context.sync();
 
 let i = 0;
 
 for (const area of visible.areas.items) {
+
 for (let r = 0; r < area.rowCount; r++) {
 
 if (stopRequested) break;
@@ -165,6 +172,7 @@ area.getCell(r,0).values = [[values[i++]]];
 
 let percent = Math.round((i / values.length) * 100);
 progressBar.style.width = percent + "%";
+
 }
 
 if (stopRequested) break;
@@ -178,13 +186,23 @@ stopTimer();
 
 });
 
+} catch (err) {
+setStatus("Error ❌ " + err.message);
+stopTimer();
+}
+
+};
+
 /* CHECK */
 checkBtn.onclick = async () => {
+
+try {
 
 await Excel.run(async (context) => {
 
 const range = context.workbook.getSelectedRange();
 range.load("values");
+
 await context.sync();
 
 const excel = (range.values || []).flat().filter(v => v !== "");
@@ -194,9 +212,13 @@ setStatus(`📊 Excel: ${excel.length} | Box: ${box.length}`);
 
 });
 
+} catch (err) {
+setStatus("Check Error ❌ " + err.message);
+}
+
 };
 
-/* REPORT (FILTER SAFE) */
+/* REPORT */
 reportBtn.onclick = async () => {
 
 try {
@@ -205,33 +227,20 @@ setStatus("Generating Report... 📊");
 
 await Excel.run(async (context) => {
 
-const sheet = context.workbook.worksheets.getActiveWorksheet();
-
-const selected = context.workbook.getSelectedRange();
-selected.load("rowIndex,columnIndex");
+const range = context.workbook.getSelectedRange();
+range.load("values,rowCount,columnCount");
 
 await context.sync();
 
-const range = sheet.getRangeByIndexes(
-selected.rowIndex,
-selected.columnIndex,
-100000,
-2
-);
+if (range.columnCount < 2)
+return setStatus("Select 2 columns");
 
-const visible = range.getSpecialCells(Excel.SpecialCellType.visible);
-
-visible.load("areas/items/values");
-await context.sync();
+const data = range.values;
 
 let report = [["Account","Value"]];
 
-for (const area of visible.areas.items) {
-const vals = area.values;
-
-for (let i = 0; i < vals.length; i++) {
-report.push([vals[i][0] || "", vals[i][1] || ""]);
-}
+for (let i = 0; i < range.rowCount; i++) {
+report.push([data[i][0], data[i][1]]);
 }
 
 const wb = XLSX.utils.book_new();
