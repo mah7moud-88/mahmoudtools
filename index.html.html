@@ -9,6 +9,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <style>
+
 body {
     font-family: "Segoe UI", Arial;
     background: #eef2f7;
@@ -17,6 +18,7 @@ body {
     justify-content: center;
 }
 
+/* CARD */
 .card {
     width: 360px;
     background: white;
@@ -57,66 +59,47 @@ textarea {
     margin-top: 12px;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     background: #f8fafc;
     border: 1px solid #e5e7eb;
     border-radius: 12px;
-    padding: 10px 12px;
+    padding: 10px 10px;
 }
 
 /* INPUT */
 #repeatCount {
-    width: 90px;
-    padding: 7px 10px;
+    width: 80px;
+    padding: 7px 8px;
     border-radius: 10px;
     border: 1px solid #d1d5db;
     font-size: 13px;
 }
 
-/* 🔥 CHECK BUTTON (same style but added fix) */
+/* SMALL ACTION BUTTONS */
 .check-btn {
-    background: linear-gradient(135deg, #6366f1, #4f46e5);
-    font-size: 12px;
-    padding: 6px 10px;
-    border-radius: 8px;
+    width: 36px;
+    height: 34px;
+    padding: 0;
     border: none;
+    border-radius: 8px;
     cursor: pointer;
     color: white;
-    font-weight: 600;
-    transition: all 0.2s ease;
-    flex: none;
-    width: 85px;
-    height: 34px;
-    box-shadow: 0 4px 10px rgba(99, 102, 241, 0.25);
+    font-size: 14px;
+    transition: 0.2s;
 }
 
 .check-btn:hover {
     transform: translateY(-1px);
-    box-shadow: 0 6px 14px rgba(99, 102, 241, 0.35);
 }
 
-.check-btn:active {
-    transform: scale(0.97);
-}
-
-/* BUTTONS */
-.row {
+/* BUTTON GROUP */
+.btn-group {
     display: flex;
-    gap: 10px;
-    margin-top: 12px;
-    flex-wrap: wrap;
+    gap: 6px;
+    margin-left: auto;
 }
 
-button.action {
-    flex: 1;
-    padding: 10px;
-    border: none;
-    border-radius: 10px;
-    color: white;
-    cursor: pointer;
-    font-size: 13px;
-}
-
+/* BUTTON COLORS */
 .upload-btn { background: #2563eb; }
 .clear-btn { background: #ef4444; }
 .paste-btn { background: #16a34a; }
@@ -147,22 +130,24 @@ button.action {
     color: #666;
 }
 
-/* DASHBOARD */
-.dashboard {
+/* MAIN BUTTONS */
+.row {
     display: flex;
-    justify-content: space-between;
-    font-size: 11px;
-    background: #f8fafc;
-    padding: 8px 10px;
-    border-radius: 10px;
-    border: 1px solid #e5e7eb;
-    margin-top: 10px;
+    gap: 10px;
+    margin-top: 12px;
+    flex-wrap: wrap;
 }
 
-.dashboard div {
-    min-width: 70px;
-    text-align: center;
+button.action {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 10px;
+    color: white;
+    cursor: pointer;
+    font-size: 13px;
 }
+
 </style>
 </head>
 
@@ -178,35 +163,36 @@ button.action {
 
 <textarea id="dataBox" placeholder="✍️ الصق أو ارفع ملف Excel هنا..."></textarea>
 
-<!-- REPEAT + CHECK (UNCHANGED STRUCTURE) -->
+<!-- REPEAT + BUTTONS -->
 <div class="repeat-wrapper">
 
 <label>🔁 Repeat</label>
 
 <input id="repeatCount" type="number" min="0" value="0">
 
-<button id="checkBtn" class="check-btn">🔍 Check</button>
+<div class="btn-group">
+
+<button id="checkBtn" class="check-btn" style="background:#6366f1;">🔍</button>
+
+<button id="reportBtn" class="check-btn" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9);">📊</button>
+
+</div>
 
 </div>
 
 <!-- MAIN BUTTONS -->
 <div class="row">
+
 <button id="uploadBtn" class="action upload-btn">📂 Upload</button>
 <button id="clearBtn" class="action clear-btn">🧹 Clear</button>
 <button id="run" class="action paste-btn">🚀 Paste</button>
 <button id="stopBtn" class="action stop-btn">⛔ Stop</button>
+
 </div>
 
 <input type="file" id="fileInput" accept=".xlsx,.xls" hidden />
 
 <div class="status" id="status">🟢 Ready</div>
-
-<div class="dashboard">
-<div>📥 <span id="loadedCount">0</span></div>
-<div>📊 <span id="totalDash">0</span></div>
-<div>⚡ <span id="progressDash">0%</span></div>
-<div>⏱️ <span id="timeDash">0s</span></div>
-</div>
 
 <div class="progress-container">
 <div class="progress-bar" id="progressBar"></div>
