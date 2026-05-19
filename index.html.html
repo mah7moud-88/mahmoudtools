@@ -32,9 +32,14 @@ body {
     padding: 14px;
 }
 
-h2 { margin: 0; font-size: 16px; }
+h2 {
+    margin: 0;
+    font-size: 16px;
+}
 
-.content { padding: 14px; }
+.content {
+    padding: 14px;
+}
 
 textarea {
     width: 100%;
@@ -47,42 +52,60 @@ textarea {
     box-sizing: border-box;
 }
 
-/* repeat */
+/* REPEAT WRAPPER */
 .repeat-wrapper {
     margin-top: 12px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     background: #f8fafc;
     border: 1px solid #e5e7eb;
     border-radius: 12px;
-    padding: 10px;
+    padding: 10px 12px;
 }
 
+/* INPUT */
 #repeatCount {
-    width: 80px;
-    padding: 7px;
+    width: 90px;
+    padding: 7px 10px;
     border-radius: 10px;
     border: 1px solid #d1d5db;
+    font-size: 13px;
 }
 
-.btn-group {
-    display: flex;
-    gap: 6px;
-    margin-left: auto;
-}
-
-.small-btn {
-    width: 36px;
-    height: 34px;
-    border: none;
+/* 🔥 CHECK BUTTON PREMIUM STYLE */
+.check-btn {
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    font-size: 12px;
+    padding: 6px 10px;
     border-radius: 8px;
-    color: white;
+    border: none;
     cursor: pointer;
+    color: white;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    flex: none;
+    width: 85px;
+    height: 34px;
+    box-shadow: 0 4px 10px rgba(99, 102, 241, 0.25);
 }
 
-/* buttons */
-.row { display: flex; gap: 10px; margin-top: 12px; }
+.check-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(99, 102, 241, 0.35);
+}
+
+.check-btn:active {
+    transform: scale(0.97);
+}
+
+/* BUTTONS */
+.row {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
 
 button.action {
     flex: 1;
@@ -99,6 +122,24 @@ button.action {
 .paste-btn { background: #16a34a; }
 .stop-btn { background: #f59e0b; }
 
+/* PROGRESS */
+.progress-container {
+    width: 100%;
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 20px;
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+.progress-bar {
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(90deg,#16a34a,#22c55e);
+    transition: width 0.2s ease;
+}
+
+/* STATUS */
 .status {
     margin-top: 10px;
     font-size: 12px;
@@ -106,6 +147,7 @@ button.action {
     color: #666;
 }
 
+/* DASHBOARD */
 .dashboard {
     display: flex;
     justify-content: space-between;
@@ -121,23 +163,7 @@ button.action {
     min-width: 70px;
     text-align: center;
 }
-
-.progress-container {
-    width: 100%;
-    height: 8px;
-    background: #e5e7eb;
-    border-radius: 20px;
-    margin-top: 10px;
-}
-
-.progress-bar {
-    width: 0%;
-    height: 100%;
-    background: linear-gradient(90deg,#16a34a,#22c55e);
-    transition: 0.2s;
-}
 </style>
-
 </head>
 
 <body>
@@ -153,24 +179,17 @@ button.action {
 <textarea id="dataBox" placeholder="✍️ الصق أو ارفع ملف Excel هنا..."></textarea>
 
 <div class="repeat-wrapper">
-
 <label>🔁 Repeat</label>
-
 <input id="repeatCount" type="number" min="0" value="0">
 
-<div class="btn-group">
-<button id="checkBtn" class="small-btn" style="background:#6366f1;">🔍</button>
-</div>
-
+<button id="checkBtn" class="check-btn">🔍 Check</button>
 </div>
 
 <div class="row">
-
 <button id="uploadBtn" class="action upload-btn">📂 Upload</button>
 <button id="clearBtn" class="action clear-btn">🧹 Clear</button>
 <button id="run" class="action paste-btn">🚀 Paste</button>
 <button id="stopBtn" class="action stop-btn">⛔ Stop</button>
-
 </div>
 
 <input type="file" id="fileInput" accept=".xlsx,.xls" hidden />
@@ -189,6 +208,7 @@ button.action {
 </div>
 
 </div>
+
 </div>
 
 <script src="app.js"></script>
