@@ -7,46 +7,15 @@ const repeatCountEl = document.getElementById("repeatCount");
 const status = document.getElementById("status");
 const progressBar = document.getElementById("progressBar");
 
-const loadedCount = document.getElementById("loadedCount");
-const totalDash = document.getElementById("totalDash");
-const progressDash = document.getElementById("progressDash");
-const timeDash = document.getElementById("timeDash");
-
 const checkBtn = document.getElementById("checkBtn");
+const reportBtn = document.getElementById("reportBtn");
 
 let stopRequested = false;
-let startTime = 0;
-let timerInterval = null;
-
 let lastSourceValues = [];
 
-/* TIMER */
-function startTimer() {
-    startTime = Date.now();
-    clearInterval(timerInterval);
-
-    timerInterval = setInterval(() => {
-        const sec = Math.floor((Date.now() - startTime) / 1000);
-        timeDash.innerText = sec + "s";
-    }, 500);
-}
-
-function stopTimer() {
-    clearInterval(timerInterval);
-}
-
-/* STATUS */
-function setStatus(text) {
-    status.innerText = text;
-}
-
-/* DASHBOARD */
-function updateDashboard(total, progress) {
-    totalDash.innerText = total || 0;
-    progressDash.innerText = (progress || 0) + "%";
-}
-
-/* LIVE COUNT (FIXED SAFETY) */
+/* =========================
+   LIVE COUNT
+========================= */
 function updateLiveCount() {
 
     const values = (dataBox.value || "")
@@ -54,12 +23,14 @@ function updateLiveCount() {
         .map(v => v.trim())
         .filter(v => v !== "");
 
-    loadedCount.innerText = values.length;
+    status.innerText = `🟢 Ready | Items: ${values.length}`;
 }
 
 dataBox.addEventListener("input", updateLiveCount);
 
-/* UPLOAD */
+/* =========================
+   UPLOAD EXCEL
+========================= */
 uploadBtn.onclick = () => fileInput.click();
 
 fileInput.onchange = (e) => {
@@ -88,40 +59,37 @@ const cleaned = (json || [])
 
 dataBox.value = cleaned.join("\n");
 
-loadedCount.innerText = cleaned.length;
-
-setStatus("Loaded ✅");
+status.innerText = `Loaded ✅ (${cleaned.length})`;
 
 };
 
 reader.readAsArrayBuffer(file);
 };
 
-/* CLEAR */
+/* =========================
+   CLEAR
+========================= */
 document.getElementById("clearBtn").onclick = () => {
 
 dataBox.value = "";
-
 progressBar.style.width = "0%";
 
-loadedCount.innerText = "0";
-totalDash.innerText = "0";
-progressDash.innerText = "0%";
-timeDash.innerText = "0s";
-
-setStatus("Cleared 🧹");
+status.innerText = "Cleared 🧹";
 };
 
-/* STOP */
+/* =========================
+   STOP
+========================= */
 document.getElementById("stopBtn").onclick = () => {
 
 stopRequested = true;
-setStatus("Stopped ⛔");
+status.innerText = "Stopped ⛔";
 
-stopTimer();
 };
 
-/* PASTE (UNCHANGED LOGIC) */
+/* =========================
+   PASTE LOGIC
+========================= */
 document.getElementById("run").onclick = async () => {
 
 const repeatTimes = parseInt(repeatCountEl.value || "0");
@@ -150,11 +118,7 @@ lastSourceValues = [...values];
 stopRequested = false;
 progressBar.style.width = "0%";
 
-setStatus("Processing ⚡");
-
-startTimer();
-
-updateDashboard(values.length, 0);
+status.innerText = "Processing ⚡";
 
 try {
 
@@ -194,9 +158,7 @@ cell.values = [[values[valueIndex]]];
 valueIndex++;
 
 const percent = Math.round((valueIndex / values.length) * 100);
-
 progressBar.style.width = percent + "%";
-updateDashboard(values.length, percent);
 
 }
 
@@ -206,24 +168,23 @@ if (stopRequested) break;
 await context.sync();
 
 progressBar.style.width = "100%";
-
-setStatus("Done 🚀");
-
-stopTimer();
+status.innerText = "Done 🚀";
 
 });
 
 } catch (err) {
 console.log(err);
-setStatus("Error ❌ " + err.message);
-stopTimer();
+status.innerText = "Error ❌ " + err.message;
 }
+
 };
 
-/* CHECK (FIXED SAFETY + SAME LOGIC) */
+/* =========================
+   CHECK BUTTON
+========================= */
 checkBtn.onclick = async () => {
 
-setStatus("Checking... 🔍");
+status.innerText = "Checking... 🔍";
 
 try {
 
@@ -234,24 +195,78 @@ range.load("values");
 
 await context.sync();
 
-const excelValues = (range.values || []).flat();
-
-const pastedCount = excelValues
+const excelValues = (range.values || []).flat()
 .map(v => String(v || "").trim())
-.filter(v => v !== "")
-.length;
+.filter(v => v !== "");
 
-const sourceCount = lastSourceValues.length || 0;
+const pastedCount = excelValues.length;
+const sourceCount = (dataBox.value || "")
+.split("\n")
+.filter(v => v.trim() !== "").length;
 
-setStatus(
-`📊 Pasted: ${pastedCount} value(s) | Source: ${sourceCount}`
-);
+status.innerText =
+`📊 Excel: ${pastedCount} | Box: ${sourceCount}`;
 
 });
 
 } catch (err) {
 console.log(err);
-setStatus("Check Error ❌ " + err.message);
+status.innerText = "Check Error ❌ " + err.message;
+}
+
+};
+
+/* =========================
+   REPORT BUTTON
+========================= */
+reportBtn.onclick = async () => {
+
+status.innerText = "Generating Report... 📊";
+
+try {
+
+await Excel.run(async (context) => {
+
+const range = context.workbook.getSelectedRange();
+range.load("values, rowCount, columnCount");
+
+await context.sync();
+
+if (range.columnCount < 2) {
+status.innerText = "⚠️ Select 2 columns (Account + Value)";
+return;
+}
+
+const data = range.values;
+
+const report = [["Account", "Value"]];
+
+for (let i = 0; i < range.rowCount; i++) {
+
+const acc = data[i][0];
+const val = data[i][1];
+
+if (acc !== "" || val !== "") {
+report.push([acc, val]);
+}
+
+}
+
+// download Excel file
+const wb = XLSX.utils.book_new();
+const ws = XLSX.utils.aoa_to_sheet(report);
+
+XLSX.utils.book_append_sheet(wb, ws, "Report");
+
+XLSX.writeFile(wb, "Excel_Report.xlsx");
+
+status.innerText = "Report Downloaded ✅";
+
+});
+
+} catch (err) {
+console.log(err);
+status.innerText = "Report Error ❌ " + err.message;
 }
 
 };
