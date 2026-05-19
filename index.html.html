@@ -28,67 +28,29 @@ body {
 .topbar {
     display: flex;
     justify-content: space-between;
-    align-items: center;
     padding: 14px;
 }
 
-h2 {
-    margin: 0;
-    font-size: 16px;
-}
-
-.content {
-    padding: 14px;
-}
+.content { padding: 14px; }
 
 textarea {
     width: 100%;
     height: 180px;
     padding: 12px;
     border-radius: 12px;
-    border: 1px solid #e5e7eb;
-    resize: none;
-    font-size: 13px;
-    box-sizing: border-box;
+    border: 1px solid #ddd;
 }
 
 .repeat-wrapper {
     margin-top: 12px;
     display: flex;
-    align-items: center;
     gap: 8px;
-    background: #f8fafc;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 10px 12px;
+    align-items: center;
 }
 
 #repeatCount {
     width: 90px;
-    padding: 7px 10px;
-    border-radius: 10px;
-    border: 1px solid #d1d5db;
-    font-size: 13px;
-}
-
-.check-btn {
-    background: linear-gradient(135deg, #6366f1, #4f46e5);
-    font-size: 11px;
-    padding: 4px 8px;
-    border-radius: 8px;
-    border: none;
-    cursor: pointer;
-    color: white;
-    font-weight: 600;
-    width: 70px;
-    height: 30px;
-}
-
-.row {
-    display: flex;
-    gap: 10px;
-    margin-top: 12px;
-    flex-wrap: wrap;
+    padding: 6px;
 }
 
 button.action {
@@ -98,7 +60,6 @@ button.action {
     border-radius: 10px;
     color: white;
     cursor: pointer;
-    font-size: 13px;
 }
 
 .upload-btn { background: #2563eb; }
@@ -107,21 +68,20 @@ button.action {
 .stop-btn { background: #f59e0b; }
 
 .progress-container {
-    width: 100%;
+    margin-top: 10px;
     height: 8px;
-    background: #e5e7eb;
+    background: #eee;
     border-radius: 20px;
     overflow: hidden;
-    margin-top: 10px;
 }
 
 .progress-bar {
     width: 0%;
     height: 100%;
-    background: linear-gradient(90deg,#16a34a,#22c55e);
+    background: #22c55e;
 }
 
-/* 🔎 SEARCH */
+/* SEARCH */
 .search-btn {
     margin-top: 12px;
     width: 100%;
@@ -131,44 +91,28 @@ button.action {
 .search-box {
     display: none;
     margin-top: 10px;
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
     padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
 }
 
 .search-box input {
     width: 100%;
     padding: 8px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
     margin-bottom: 8px;
 }
 
 .search-box button {
     width: 100%;
     padding: 8px;
-    border: none;
-    border-radius: 8px;
     background: #16a34a;
     color: white;
+    border: none;
+    border-radius: 8px;
 }
 
 .status {
-    margin-top: 10px;
-    font-size: 12px;
     text-align: center;
-    color: #666;
-}
-
-.dashboard {
-    display: flex;
-    justify-content: space-between;
-    font-size: 11px;
-    background: #f8fafc;
-    padding: 8px 10px;
-    border-radius: 10px;
-    border: 1px solid #e5e7eb;
     margin-top: 10px;
 }
 </style>
@@ -179,7 +123,7 @@ button.action {
 <div class="card">
 
 <div class="topbar">
-<h2>📊 Excel Paste Pro ⚡</h2>
+<h2>📊 Excel Paste Pro</h2>
 </div>
 
 <div class="content">
@@ -187,36 +131,28 @@ button.action {
 <textarea id="dataBox"></textarea>
 
 <div class="repeat-wrapper">
-<label>🔁 Repeat</label>
-<input id="repeatCount" type="number" min="0" value="0">
-<button id="checkBtn" class="check-btn">🔍</button>
+<input id="repeatCount" type="number" value="0">
+<button id="checkBtn">🔍</button>
 </div>
 
-<div class="row">
-<button id="uploadBtn" class="action upload-btn">📂 Upload</button>
-<button id="clearBtn" class="action clear-btn">🧹 Clear</button>
-<button id="run" class="action paste-btn">🚀 Paste</button>
-<button id="stopBtn" class="action stop-btn">⛔ Stop</button>
+<div style="display:flex; gap:10px; margin-top:10px;">
+<button id="uploadBtn" class="action upload-btn">Upload</button>
+<button id="clearBtn" class="action clear-btn">Clear</button>
+<button id="run" class="action paste-btn">Paste</button>
+<button id="stopBtn" class="action stop-btn">Stop</button>
 </div>
 
-<div class="status" id="status">🟢 Ready</div>
-
-<div class="dashboard">
-<div>📥 <span id="loadedCount">0</span></div>
-<div>📊 <span id="totalDash">0</span></div>
-<div>⚡ <span id="progressDash">0%</span></div>
-<div>⏱️ <span id="timeDash">0s</span></div>
-</div>
+<div class="status" id="status">Ready</div>
 
 <div class="progress-container">
 <div class="progress-bar" id="progressBar"></div>
 </div>
 
-<!-- 🔎 SEARCH -->
-<button id="searchBtn" class="action search-btn">🔎 Search</button>
+<!-- SEARCH -->
+<button id="searchBtn" class="action search-btn">Search</button>
 
 <div id="searchBox" class="search-box">
-    <input id="searchInput" type="text" placeholder="اكتب الرقم..." />
+    <input id="searchInput" placeholder="اكتب الرقم..." />
     <button id="doSearchBtn">بحث</button>
 </div>
 
