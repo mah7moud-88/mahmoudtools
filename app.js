@@ -22,12 +22,11 @@ let timerInterval = null;
 
 let lastSourceValues = [];
 
-/* =========================
-   TIMER
-========================= */
+/* TIMER */
 function startTimer() {
 
     startTime = Date.now();
+
     clearInterval(timerInterval);
 
     timerInterval = setInterval(() => {
@@ -44,24 +43,18 @@ function stopTimer() {
     clearInterval(timerInterval);
 }
 
-/* =========================
-   STATUS
-========================= */
+/* STATUS */
 function setStatus(text) {
     status.innerText = text;
 }
 
-/* =========================
-   DASHBOARD
-========================= */
+/* DASHBOARD */
 function updateDashboard(total, progress) {
     totalDash.innerText = total || 0;
     progressDash.innerText = (progress || 0) + "%";
 }
 
-/* =========================
-   LIVE COUNT
-========================= */
+/* LIVE COUNT */
 dataBox.addEventListener("input", () => {
 
     const values = dataBox.value
@@ -72,9 +65,7 @@ dataBox.addEventListener("input", () => {
     loadedCount.innerText = values.length;
 });
 
-/* =========================
-   UPLOAD
-========================= */
+/* UPLOAD */
 uploadBtn.onclick = () => fileInput.click();
 
 fileInput.onchange = (e) => {
@@ -100,11 +91,6 @@ const cleaned = json.flat()
 .map(v => String(v).trim())
 .filter(v => v !== "");
 
-if (cleaned.length > 100000) {
-    alert("الملف كبير جدًا");
-    return;
-}
-
 dataBox.value = cleaned.join("\n");
 
 loadedCount.innerText = cleaned.length;
@@ -117,9 +103,7 @@ fileInput.value = "";
 reader.readAsArrayBuffer(file);
 };
 
-/* =========================
-   CLEAR
-========================= */
+/* CLEAR */
 document.getElementById("clearBtn").onclick = () => {
 
 dataBox.value = "";
@@ -134,9 +118,7 @@ timeDash.innerText = "0s";
 setStatus("Cleared 🧹");
 };
 
-/* =========================
-   STOP
-========================= */
+/* STOP */
 document.getElementById("stopBtn").onclick = () => {
 
 stopRequested = true;
@@ -144,9 +126,7 @@ setStatus("Stopped ⛔");
 stopTimer();
 };
 
-/* =========================
-   FILTER LABEL
-========================= */
+/* FILTER LABEL */
 filterModeEl.addEventListener("change", function () {
 
 filterLabel.innerText =
@@ -155,9 +135,7 @@ filterLabel.innerText =
     : "🚀 Fast Mode";
 });
 
-/* =========================
-   PASTE ENGINE
-========================= */
+/* PASTE */
 document.getElementById("run").onclick = async () => {
 
 const repeatTimes = parseInt(repeatCountEl.value || "0");
@@ -167,7 +145,7 @@ const baseValues = dataBox.value
 .map(v => v.trim())
 .filter(v => v !== "");
 
-/* REPEAT LOGIC (UNCHANGED) */
+/* OLD REPEAT LOGIC (UNCHANGED) */
 let values = [];
 
 if (repeatTimes <= 0) {
@@ -191,6 +169,7 @@ if (!values.length) {
 lastSourceValues = [...values];
 
 stopRequested = false;
+
 progressBar.style.width = "0%";
 
 setStatus("Processing ⚡");
@@ -205,30 +184,25 @@ await Excel.run(async (context) => {
 
     context.application.suspendScreenUpdatingUntilNextSync();
 
-    const sheet =
-        context.workbook.worksheets.getActiveWorksheet();
+    const sheet = context.workbook.worksheets.getActiveWorksheet();
 
-    const selected =
-        context.workbook.getSelectedRange();
+    const selected = context.workbook.getSelectedRange();
 
-    selected.load("rowIndex,columnIndex,rowCount,columnCount");
+    selected.load("rowIndex,columnIndex");
 
     await context.sync();
 
-    const scanRange =
-        sheet.getRangeByIndexes(
-            selected.rowIndex,
-            selected.columnIndex,
-            selected.rowCount,
-            selected.columnCount
-        );
+    const startRow = selected.rowIndex;
+    const col = selected.columnIndex;
 
-    const useFilter = filterModeEl.checked;
+    const scanRange = sheet.getRangeByIndexes(startRow, col, 100000, 1);
 
     let valueIndex = 0;
 
+    const useFilter = filterModeEl.checked;
+
     /* =========================
-       🚀 FAST MODE
+       🚀 FAST MODE (NO FILTER)
     ========================= */
     if (!useFilter) {
 
@@ -236,8 +210,8 @@ await Excel.run(async (context) => {
 
         const targetRange =
             sheet.getRangeByIndexes(
-                selected.rowIndex,
-                selected.columnIndex,
+                startRow,
+                col,
                 batch.length,
                 1
             );
@@ -270,74 +244,57 @@ await Excel.run(async (context) => {
             return;
         }
 
-        visibleRange.load("values");
+        visibleRange.load("areas/items/rowCount");
 
         await context.sync();
 
-        const values2 = visibleRange.values || [];
+        for (const area of visibleRange.areas.items) {
 
-        let flat = [];
+            if (stopRequested) break;
 
-        for (const row of values2) {
+            let batch = [];
 
-            if (Array.isArray(row)) {
-                flat.push(...row);
-            } else {
-                flat.push(row);
+            for (let r = 0; r < area.rowCount; r++) {
+
+                if (stopRequested) break;
+                if (valueIndex >= values.length) break;
+
+                batch.push([values[valueIndex]]);
+                valueIndex++;
             }
-        }
 
-        let pastedCount = 0;
-        let emptyCount = 0;
+            if (batch.length > 0) {
 
-        for (const v of flat) {
+                const targetRange =
+                    area.getCell(0, 0)
+                        .getResizedRange(batch.length - 1, 0);
 
-            const val = String(v ?? "").trim();
-
-            if (val === "") {
-                emptyCount++;
-            } else {
-                pastedCount++;
+                targetRange.values = batch;
             }
+
+            const percent = Math.round((valueIndex / values.length) * 100);
+
+            progressBar.style.width = percent + "%";
+            updateDashboard(values.length, percent);
         }
 
-        const sourceCount = lastSourceValues.length || 0;
-
-        const missing = sourceCount - pastedCount;
-
-        if (missing > 0) {
-
-            setStatus(
-                `⚠️ Missing: ${missing} | Visible: ${pastedCount} | Empty: ${emptyCount}`
-            );
-
-        } else {
-
-            setStatus(
-                `✅ OK | Visible: ${pastedCount} | Empty: ${emptyCount}`
-            );
+        if (!stopRequested) {
+            progressBar.style.width = "100%";
+            setStatus("Done 🚀 Filter Mode");
         }
-
-        progressBar.style.width = "100%";
-        updateDashboard(values.length, 100);
     }
 
     stopTimer();
 });
 
 } catch (err) {
-
     console.log(err);
-
     setStatus("Error ❌ " + err.message);
-
     stopTimer();
 }
 };
 
-/* =========================
-   CHECK (FIXED + SAFE)
-========================= */
+/* CHECK */
 checkBtn.onclick = async () => {
 
 setStatus("Checking... 🔍");
@@ -346,96 +303,30 @@ try {
 
 await Excel.run(async (context) => {
 
-    const sheet =
-        context.workbook.worksheets.getActiveWorksheet();
+    const range = context.workbook.getSelectedRange();
 
-    const range =
-        context.workbook.getSelectedRange();
-
-    range.load("rowIndex,columnIndex,rowCount,columnCount");
+    range.load("values");
 
     await context.sync();
 
-    const scanRange =
-        sheet.getRangeByIndexes(
-            range.rowIndex,
-            range.columnIndex,
-            range.rowCount,
-            range.columnCount
-        );
+    const excelValues = range.values.flat();
 
-    let visibleRange;
+    const pastedCount = excelValues
+        .map(v => String(v).trim())
+        .filter(v => v !== "")
+        .length;
 
-    try {
+    const sourceCount = lastSourceValues.length || 0;
 
-        visibleRange =
-            scanRange.getSpecialCells(
-                Excel.SpecialCellType.visible
-            );
-
-    } catch {
-
-        setStatus("No visible cells ❌");
-        return;
-    }
-
-    visibleRange.load("values");
-
-    await context.sync();
-
-    const values2 = visibleRange.values || [];
-
-    let flat = [];
-
-    for (const row of values2) {
-
-        if (Array.isArray(row)) {
-            flat.push(...row);
-        } else {
-            flat.push(row);
-        }
-    }
-
-    let pastedCount = 0;
-    let emptyCount = 0;
-
-    for (const v of flat) {
-
-        const val = String(v ?? "").trim();
-
-        if (val === "") {
-            emptyCount++;
-        } else {
-            pastedCount++;
-        }
-    }
-
-    const sourceCount =
-        lastSourceValues.length || 0;
-
-    const missing =
-        sourceCount - pastedCount;
-
-    if (missing > 0) {
-
-        setStatus(
-            `⚠️ Missing: ${missing} | Visible: ${pastedCount} | Empty: ${emptyCount}`
-        );
-
-    } else {
-
-        setStatus(
-            `✅ OK | Visible: ${pastedCount} | Empty: ${emptyCount}`
-        );
-    }
-
+    setStatus(
+        `📊 Pasted: ${pastedCount} | Source: ${sourceCount}`
+    );
 });
 
 } catch (err) {
 
     setStatus("Check Error ❌ " + err.message);
 }
-
 };
 
 });
