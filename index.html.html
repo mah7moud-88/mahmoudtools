@@ -66,6 +66,13 @@ textarea {
     box-sizing: border-box;
 }
 
+.repeat-label {
+    font-weight: 600;
+    font-size: 13px;
+    color: #374151;
+    white-space: nowrap;
+}
+
 #repeatCount {
     flex: 1;
     min-width: 0;
@@ -73,21 +80,6 @@ textarea {
     border-radius: 10px;
     border: 1px solid #d1d5db;
     font-size: 13px;
-}
-
-/* CHECK BUTTON */
-.check-btn {
-    background: linear-gradient(135deg, #6366f1, #4f46e5);
-    font-size: 11px;
-    padding: 4px 8px;
-    border-radius: 8px;
-    border: none;
-    cursor: pointer;
-    color: white;
-    font-weight: 600;
-    width: 70px;
-    height: 30px;
-    flex-shrink: 0;
 }
 
 /* BUTTONS */
@@ -130,11 +122,12 @@ button.action {
     transition: width 0.2s ease;
 }
 
-/* FILTER TOGGLE */
+/* FILTER + CHECK ROW */
 .filter-toggle {
     margin-top: 12px;
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 10px;
     background: #f8fafc;
     border: 1px solid #e5e7eb;
@@ -142,6 +135,7 @@ button.action {
     padding: 10px 12px;
 }
 
+/* SWITCH */
 .switch {
     position: relative;
     display: inline-block;
@@ -187,6 +181,18 @@ input:checked + .slider:before {
     transform: translateX(22px);
 }
 
+/* CHECK BUTTON */
+.check-btn {
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    font-size: 11px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    color: white;
+    font-weight: 600;
+}
+
 /* STATUS */
 .status {
     margin-top: 10px;
@@ -206,7 +212,6 @@ input:checked + .slider:before {
     border: 1px solid #e5e7eb;
     margin-top: 10px;
 }
-
 </style>
 </head>
 
@@ -222,9 +227,13 @@ input:checked + .slider:before {
 
 <textarea id="dataBox" placeholder="✍️ الصق أو ارفع ملف Excel هنا..."></textarea>
 
+<!-- REPEAT -->
 <div class="repeat-wrapper">
+
+<span class="repeat-label">🔁 Repeat</span>
+
 <input id="repeatCount" type="number" min="0" value="0">
-<button id="checkBtn" class="check-btn">🔍</button>
+
 </div>
 
 <div class="row">
@@ -249,7 +258,7 @@ input:checked + .slider:before {
 <div class="progress-bar" id="progressBar"></div>
 </div>
 
-<!-- 🔥 FILTER TOGGLE (NEW POSITION) -->
+<!-- FILTER + CHECK -->
 <div class="filter-toggle">
 
 <label class="switch">
@@ -258,6 +267,8 @@ input:checked + .slider:before {
 </label>
 
 <span id="filterLabel">🔍 Filter Mode</span>
+
+<button id="checkBtn" class="check-btn">🔍 Check</button>
 
 </div>
 
