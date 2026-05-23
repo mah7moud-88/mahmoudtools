@@ -28,7 +28,6 @@ let lastSourceValues = [];
 function startTimer() {
 
     startTime = Date.now();
-
     clearInterval(timerInterval);
 
     timerInterval = setInterval(() => {
@@ -146,7 +145,7 @@ stopTimer();
 };
 
 /* =========================
-   FILTER LABEL TOGGLE
+   FILTER LABEL
 ========================= */
 filterModeEl.addEventListener("change", function () {
 
@@ -275,14 +274,25 @@ await Excel.run(async (context) => {
 
         await context.sync();
 
-        const flatVisible = visibleRange.values.flat();
+        const values2 = visibleRange.values || [];
+
+        let flat = [];
+
+        for (const row of values2) {
+
+            if (Array.isArray(row)) {
+                flat.push(...row);
+            } else {
+                flat.push(row);
+            }
+        }
 
         let pastedCount = 0;
         let emptyCount = 0;
 
-        for (const v of flatVisible) {
+        for (const v of flat) {
 
-            const val = String(v).trim();
+            const val = String(v ?? "").trim();
 
             if (val === "") {
                 emptyCount++;
@@ -326,7 +336,7 @@ await Excel.run(async (context) => {
 };
 
 /* =========================
-   CHECK (FIXED - VISIBLE ONLY)
+   CHECK (FIXED + SAFE)
 ========================= */
 checkBtn.onclick = async () => {
 
@@ -373,14 +383,25 @@ await Excel.run(async (context) => {
 
     await context.sync();
 
-    const flat = visibleRange.values.flat();
+    const values2 = visibleRange.values || [];
+
+    let flat = [];
+
+    for (const row of values2) {
+
+        if (Array.isArray(row)) {
+            flat.push(...row);
+        } else {
+            flat.push(row);
+        }
+    }
 
     let pastedCount = 0;
     let emptyCount = 0;
 
     for (const v of flat) {
 
-        const val = String(v).trim();
+        const val = String(v ?? "").trim();
 
         if (val === "") {
             emptyCount++;
