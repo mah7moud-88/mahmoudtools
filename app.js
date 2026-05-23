@@ -22,32 +22,43 @@ let lastSourceValues = [];
 
 /* TIMER */
 function startTimer() {
+
     startTime = Date.now();
+
     clearInterval(timerInterval);
 
     timerInterval = setInterval(() => {
-        const sec = Math.floor((Date.now() - startTime) / 1000);
+
+        const sec =
+            Math.floor((Date.now() - startTime) / 1000);
+
         timeDash.innerText = sec + "s";
+
     }, 500);
 }
 
 function stopTimer() {
+
     clearInterval(timerInterval);
 }
 
 /* STATUS */
 function setStatus(text) {
+
     status.innerText = text;
 }
 
 /* DASHBOARD */
 function updateDashboard(total, progress) {
+
     totalDash.innerText = total || 0;
+
     progressDash.innerText = (progress || 0) + "%";
 }
 
 /* LIVE COUNT */
 function updateLiveCount() {
+
     const values = dataBox.value
         .split("\n")
         .map(v => v.trim())
@@ -63,194 +74,309 @@ uploadBtn.onclick = () => fileInput.click();
 
 fileInput.onchange = (e) => {
 
-const file = e.target.files[0];
-if (!file) return;
+    const file = e.target.files[0];
 
-const reader = new FileReader();
+    if (!file) return;
 
-reader.onload = (event) => {
+    const reader = new FileReader();
 
-const data = new Uint8Array(event.target.result);
-const workbook = XLSX.read(data, { type: "array" });
+    reader.onload = (event) => {
 
-const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const data =
+            new Uint8Array(event.target.result);
 
-const json = XLSX.utils.sheet_to_json(sheet, {
-header: 1,
-defval: ""
-});
+        const workbook =
+            XLSX.read(data, { type: "array" });
 
-const cleaned = json.flat()
-.map(v => String(v).trim())
-.filter(v => v !== "");
+        const sheet =
+            workbook.Sheets[
+                workbook.SheetNames[0]
+            ];
 
-dataBox.value = cleaned.join("\n");
+        const json =
+            XLSX.utils.sheet_to_json(sheet, {
+                header: 1,
+                defval: ""
+            });
 
-loadedCount.innerText = cleaned.length;
+        const cleaned = json
+            .flat()
+            .map(v => String(v).trim())
+            .filter(v => v !== "");
 
-setStatus("Loaded ✅");
+        /* LIMIT */
+        if (cleaned.length > 100000) {
 
-};
+            alert("الملف ضخم جدًا");
 
-reader.readAsArrayBuffer(file);
+            return;
+        }
+
+        dataBox.value = cleaned.join("\n");
+
+        loadedCount.innerText = cleaned.length;
+
+        setStatus("Loaded ✅");
+
+        /* RESET FILE INPUT */
+        fileInput.value = "";
+    };
+
+    reader.readAsArrayBuffer(file);
 };
 
 /* CLEAR */
 document.getElementById("clearBtn").onclick = () => {
 
-dataBox.value = "";
+    dataBox.value = "";
 
-progressBar.style.width = "0%";
+    progressBar.style.width = "0%";
 
-loadedCount.innerText = "0";
-totalDash.innerText = "0";
-progressDash.innerText = "0%";
-timeDash.innerText = "0s";
+    loadedCount.innerText = "0";
+    totalDash.innerText = "0";
+    progressDash.innerText = "0%";
+    timeDash.innerText = "0s";
 
-setStatus("Cleared 🧹");
+    setStatus("Cleared 🧹");
 };
 
 /* STOP */
 document.getElementById("stopBtn").onclick = () => {
 
-stopRequested = true;
-setStatus("Stopped ⛔");
+    stopRequested = true;
 
-stopTimer();
+    setStatus("Stopped ⛔");
+
+    stopTimer();
 };
 
-/* PASTE (UNCHANGED LOGIC) */
+/* PASTE */
 document.getElementById("run").onclick = async () => {
 
-const repeatTimes = parseInt(repeatCountEl.value || "0");
+    const repeatTimes =
+        parseInt(repeatCountEl.value || "0");
 
-const baseValues = dataBox.value
-.split("\n")
-.map(v => v.trim())
-.filter(v => v !== "");
+    const baseValues = dataBox.value
+        .split("\n")
+        .map(v => v.trim())
+        .filter(v => v !== "");
 
-let values = [];
+    let values = [];
 
-if (repeatTimes <= 0) values = baseValues;
-else {
-for (const v of baseValues) {
-for (let i = 0; i < repeatTimes; i++) {
-values.push(v);
-}}}
+    /* REPEAT (OLD LOGIC) */
+    if (repeatTimes <= 0) {
 
-if (!values.length) {
-alert("اكتب أو ارفع بيانات");
-return;
-}
+        values = baseValues;
 
-lastSourceValues = [...values];
+    } else {
 
-stopRequested = false;
-progressBar.style.width = "0%";
+        for (const v of baseValues) {
 
-setStatus("Processing ⚡");
+            for (let i = 0; i < repeatTimes; i++) {
 
-startTimer();
+                values.push(v);
+            }
+        }
+    }
 
-updateDashboard(values.length, 0);
+    /* EMPTY CHECK */
+    if (!values.length) {
 
-try {
+        alert("اكتب أو ارفع بيانات");
 
-await Excel.run(async (context) => {
+        return;
+    }
 
-const sheet = context.workbook.worksheets.getActiveWorksheet();
+    /* SAVE SOURCE */
+    lastSourceValues = [...values];
 
-const selected = context.workbook.getSelectedRange();
-selected.load("rowIndex,columnIndex");
-await context.sync();
+    stopRequested = false;
 
-const startRow = selected.rowIndex;
-const col = selected.columnIndex;
+    progressBar.style.width = "0%";
 
-const scanRange = sheet.getRangeByIndexes(startRow, col, 100000, 1);
+    setStatus("Processing ⚡");
 
-const visibleRange = scanRange.getSpecialCells(Excel.SpecialCellType.visible);
+    startTimer();
 
-visibleRange.load("areas/items/rowCount");
+    updateDashboard(values.length, 0);
 
-await context.sync();
+    try {
 
-let valueIndex = 0;
+        await Excel.run(async (context) => {
 
-for (const area of visibleRange.areas.items) {
+            /* SPEED BOOST */
+            context.application
+                .suspendScreenUpdatingUntilNextSync();
 
-for (let r = 0; r < area.rowCount; r++) {
+            const sheet =
+                context.workbook.worksheets
+                .getActiveWorksheet();
 
-if (stopRequested) break;
+            const selected =
+                context.workbook.getSelectedRange();
 
-if (valueIndex >= values.length) break;
+            selected.load("rowIndex,columnIndex");
 
-const cell = area.getCell(r, 0);
-cell.values = [[values[valueIndex]]];
+            await context.sync();
 
-valueIndex++;
+            const startRow = selected.rowIndex;
 
-const percent = Math.round((valueIndex / values.length) * 100);
+            const col = selected.columnIndex;
 
-progressBar.style.width = percent + "%";
-updateDashboard(values.length, percent);
+            const scanRange =
+                sheet.getRangeByIndexes(
+                    startRow,
+                    col,
+                    100000,
+                    1
+                );
 
-}
+            let visibleRange;
 
-if (stopRequested) break;
-}
+            /* FILTER SAFE */
+            try {
 
-await context.sync();
+                visibleRange =
+                    scanRange.getSpecialCells(
+                        Excel.SpecialCellType.visible
+                    );
 
-progressBar.style.width = "100%";
+            } catch {
 
-setStatus("Done 🚀");
+                setStatus("No visible cells ❌");
 
-stopTimer();
+                stopTimer();
 
-});
+                return;
+            }
 
-} catch (err) {
-console.log(err);
-setStatus("Error ❌ " + err.message);
-stopTimer();
-}
+            visibleRange.load("areas/items/rowCount");
+
+            await context.sync();
+
+            let valueIndex = 0;
+
+            /* LOOP VISIBLE AREAS */
+            for (const area of visibleRange.areas.items) {
+
+                if (stopRequested) break;
+
+                let batch = [];
+
+                /* BUILD BATCH */
+                for (let r = 0; r < area.rowCount; r++) {
+
+                    if (stopRequested) break;
+
+                    if (valueIndex >= values.length)
+                        break;
+
+                    batch.push([
+                        values[valueIndex]
+                    ]);
+
+                    valueIndex++;
+                }
+
+                /* WRITE BATCH */
+                if (batch.length > 0) {
+
+                    const targetRange =
+                        area.getCell(0, 0)
+                        .getResizedRange(
+                            batch.length - 1,
+                            0
+                        );
+
+                    targetRange.values = batch;
+                }
+
+                /* PROGRESS */
+                const percent = Math.round(
+                    (valueIndex / values.length) * 100
+                );
+
+                progressBar.style.width =
+                    percent + "%";
+
+                updateDashboard(
+                    values.length,
+                    percent
+                );
+            }
+
+            await context.sync();
+
+            /* FINAL STATUS */
+            if (!stopRequested) {
+
+                progressBar.style.width = "100%";
+
+                updateDashboard(
+                    values.length,
+                    100
+                );
+
+                setStatus("Done 🚀");
+
+            } else {
+
+                setStatus("Stopped ⛔");
+            }
+
+            stopTimer();
+        });
+
+    } catch (err) {
+
+        console.log(err);
+
+        setStatus("Error ❌ " + err.message);
+
+        stopTimer();
+    }
 };
 
-/* CHECK (FINAL VERSION - NO CHANGE BUTTON) */
+/* CHECK */
 checkBtn.onclick = async () => {
 
-setStatus("Checking... 🔍");
+    setStatus("Checking... 🔍");
 
-try {
+    try {
 
-await Excel.run(async (context) => {
+        await Excel.run(async (context) => {
 
-const range = context.workbook.getSelectedRange();
-range.load("values");
+            const range =
+                context.workbook.getSelectedRange();
 
-await context.sync();
+            range.load("values");
 
-const excelValues = range.values.flat();
+            await context.sync();
 
-const pastedCount = excelValues
-.map(v => String(v).trim())
-.filter(v => v !== "")
-.length;
+            const excelValues =
+                range.values.flat();
 
-const sourceCount = lastSourceValues.length || 0;
+            const pastedCount = excelValues
+                .map(v => String(v).trim())
+                .filter(v => v !== "")
+                .length;
 
-setStatus(
-`📊 Pasted: ${pastedCount} value(s) | Source: ${sourceCount}`
-);
+            const sourceCount =
+                lastSourceValues.length || 0;
 
-});
+            setStatus(
+                `📊 Pasted: ${pastedCount} value(s) | Source: ${sourceCount}`
+            );
+        });
 
-} catch (err) {
-console.log(err);
-setStatus("Check Error ❌ " + err.message);
-}
+    } catch (err) {
 
+        console.log(err);
+
+        setStatus(
+            "Check Error ❌ " + err.message
+        );
+    }
 };
 
 });
