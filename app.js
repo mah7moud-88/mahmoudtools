@@ -22,11 +22,12 @@ let timerInterval = null;
 
 let lastSourceValues = [];
 
-/* TIMER */
+/* =========================
+   TIMER
+========================= */
 function startTimer() {
 
     startTime = Date.now();
-
     clearInterval(timerInterval);
 
     timerInterval = setInterval(() => {
@@ -43,18 +44,24 @@ function stopTimer() {
     clearInterval(timerInterval);
 }
 
-/* STATUS */
+/* =========================
+   STATUS
+========================= */
 function setStatus(text) {
     status.innerText = text;
 }
 
-/* DASHBOARD */
+/* =========================
+   DASHBOARD
+========================= */
 function updateDashboard(total, progress) {
     totalDash.innerText = total || 0;
     progressDash.innerText = (progress || 0) + "%";
 }
 
-/* LIVE COUNT */
+/* =========================
+   LIVE COUNT
+========================= */
 dataBox.addEventListener("input", () => {
 
     const values = dataBox.value
@@ -65,7 +72,9 @@ dataBox.addEventListener("input", () => {
     loadedCount.innerText = values.length;
 });
 
-/* UPLOAD */
+/* =========================
+   UPLOAD
+========================= */
 uploadBtn.onclick = () => fileInput.click();
 
 fileInput.onchange = (e) => {
@@ -91,6 +100,11 @@ const cleaned = json.flat()
 .map(v => String(v).trim())
 .filter(v => v !== "");
 
+if (cleaned.length > 100000) {
+    alert("الملف كبير جدًا");
+    return;
+}
+
 dataBox.value = cleaned.join("\n");
 
 loadedCount.innerText = cleaned.length;
@@ -103,7 +117,9 @@ fileInput.value = "";
 reader.readAsArrayBuffer(file);
 };
 
-/* CLEAR */
+/* =========================
+   CLEAR
+========================= */
 document.getElementById("clearBtn").onclick = () => {
 
 dataBox.value = "";
@@ -118,7 +134,9 @@ timeDash.innerText = "0s";
 setStatus("Cleared 🧹");
 };
 
-/* STOP */
+/* =========================
+   STOP
+========================= */
 document.getElementById("stopBtn").onclick = () => {
 
 stopRequested = true;
@@ -126,7 +144,9 @@ setStatus("Stopped ⛔");
 stopTimer();
 };
 
-/* FILTER LABEL */
+/* =========================
+   FILTER LABEL
+========================= */
 filterModeEl.addEventListener("change", function () {
 
 filterLabel.innerText =
@@ -135,7 +155,9 @@ filterLabel.innerText =
     : "🚀 Fast Mode";
 });
 
-/* PASTE */
+/* =========================
+   PASTE ENGINE
+========================= */
 document.getElementById("run").onclick = async () => {
 
 const repeatTimes = parseInt(repeatCountEl.value || "0");
@@ -145,7 +167,7 @@ const baseValues = dataBox.value
 .map(v => v.trim())
 .filter(v => v !== "");
 
-/* OLD REPEAT LOGIC (UNCHANGED) */
+/* REPEAT LOGIC (UNCHANGED) */
 let values = [];
 
 if (repeatTimes <= 0) {
@@ -169,7 +191,6 @@ if (!values.length) {
 lastSourceValues = [...values];
 
 stopRequested = false;
-
 progressBar.style.width = "0%";
 
 setStatus("Processing ⚡");
@@ -184,9 +205,11 @@ await Excel.run(async (context) => {
 
     context.application.suspendScreenUpdatingUntilNextSync();
 
-    const sheet = context.workbook.worksheets.getActiveWorksheet();
+    const sheet =
+        context.workbook.worksheets.getActiveWorksheet();
 
-    const selected = context.workbook.getSelectedRange();
+    const selected =
+        context.workbook.getSelectedRange();
 
     selected.load("rowIndex,columnIndex");
 
@@ -195,14 +218,15 @@ await Excel.run(async (context) => {
     const startRow = selected.rowIndex;
     const col = selected.columnIndex;
 
-    const scanRange = sheet.getRangeByIndexes(startRow, col, 100000, 1);
-
-    let valueIndex = 0;
+    const scanRange =
+        sheet.getRangeByIndexes(startRow, col, 100000, 1);
 
     const useFilter = filterModeEl.checked;
 
+    let valueIndex = 0;
+
     /* =========================
-       🚀 FAST MODE (NO FILTER)
+       🚀 FAST MODE
     ========================= */
     if (!useFilter) {
 
@@ -272,7 +296,8 @@ await Excel.run(async (context) => {
                 targetRange.values = batch;
             }
 
-            const percent = Math.round((valueIndex / values.length) * 100);
+            const percent =
+                Math.round((valueIndex / values.length) * 100);
 
             progressBar.style.width = percent + "%";
             updateDashboard(values.length, percent);
@@ -288,13 +313,16 @@ await Excel.run(async (context) => {
 });
 
 } catch (err) {
+
     console.log(err);
     setStatus("Error ❌ " + err.message);
     stopTimer();
 }
 };
 
-/* CHECK */
+/* =========================
+   CHECK (REAL PASTE COUNT FIXED)
+========================= */
 checkBtn.onclick = async () => {
 
 setStatus("Checking... 🔍");
@@ -303,30 +331,77 @@ try {
 
 await Excel.run(async (context) => {
 
-    const range = context.workbook.getSelectedRange();
+    const sheet =
+        context.workbook.worksheets.getActiveWorksheet();
 
-    range.load("values");
+    const selected =
+        context.workbook.getSelectedRange();
+
+    selected.load("rowIndex,columnIndex");
 
     await context.sync();
 
-    const excelValues = range.values.flat();
+    const startRow = selected.rowIndex;
+    const col = selected.columnIndex;
 
-    const pastedCount = excelValues
-        .map(v => String(v).trim())
-        .filter(v => v !== "")
-        .length;
+    const count = lastSourceValues.length || 0;
 
-    const sourceCount = lastSourceValues.length || 0;
+    if (count === 0) {
+        setStatus("No source data ❌");
+        return;
+    }
 
-    setStatus(
-        `📊 Pasted: ${pastedCount} | Source: ${sourceCount}`
-    );
+    const checkRange =
+        sheet.getRangeByIndexes(
+            startRow,
+            col,
+            count,
+            1
+        );
+
+    checkRange.load("values");
+
+    await context.sync();
+
+    const flat = checkRange.values.flat();
+
+    let pastedCount = 0;
+    let emptyCount = 0;
+
+    for (const v of flat) {
+
+        const val = String(v ?? "").trim();
+
+        if (val === "") {
+            emptyCount++;
+        } else {
+            pastedCount++;
+        }
+    }
+
+    const missing =
+        count - pastedCount;
+
+    if (missing > 0) {
+
+        setStatus(
+            `⚠️ Missing: ${missing} | Pasted: ${pastedCount} | Empty: ${emptyCount}`
+        );
+
+    } else {
+
+        setStatus(
+            `✅ OK | Pasted: ${pastedCount} | Empty: ${emptyCount}`
+        );
+    }
+
 });
 
 } catch (err) {
 
     setStatus("Check Error ❌ " + err.message);
 }
+
 };
 
 });
