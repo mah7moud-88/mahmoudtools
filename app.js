@@ -23,6 +23,15 @@ let timerInterval = null;
 let lastSourceValues = [];
 
 /* =========================
+   🔥 PASTE RESULT TRACKER
+========================= */
+let lastPasteResult = {
+    written: 0,
+    errors: 0,
+    total: 0
+};
+
+/* =========================
    TIMER
 ========================= */
 function startTimer() {
@@ -131,6 +140,12 @@ totalDash.innerText = "0";
 progressDash.innerText = "0%";
 timeDash.innerText = "0s";
 
+lastPasteResult = {
+    written: 0,
+    errors: 0,
+    total: 0
+};
+
 setStatus("Cleared 🧹");
 };
 
@@ -167,7 +182,7 @@ const baseValues = dataBox.value
 .map(v => v.trim())
 .filter(v => v !== "");
 
-/* REPEAT LOGIC (UNCHANGED) */
+/* REPEAT LOGIC */
 let values = [];
 
 if (repeatTimes <= 0) {
@@ -198,6 +213,13 @@ setStatus("Processing ⚡");
 startTimer();
 
 updateDashboard(values.length, 0);
+
+/* reset result */
+lastPasteResult = {
+    written: 0,
+    errors: 0,
+    total: values.length
+};
 
 try {
 
@@ -242,6 +264,12 @@ await Excel.run(async (context) => {
 
         targetRange.values = batch;
 
+        lastPasteResult = {
+            written: values.length,
+            errors: 0,
+            total: values.length
+        };
+
         progressBar.style.width = "100%";
         updateDashboard(values.length, 100);
         setStatus("Done 🚀 Fast Mode");
@@ -283,7 +311,16 @@ await Excel.run(async (context) => {
                 if (stopRequested) break;
                 if (valueIndex >= values.length) break;
 
-                batch.push([values[valueIndex]]);
+                try {
+
+                    batch.push([values[valueIndex]]);
+                    lastPasteResult.written++;
+
+                } catch (e) {
+
+                    lastPasteResult.errors++;
+                }
+
                 valueIndex++;
             }
 
@@ -321,85 +358,30 @@ await Excel.run(async (context) => {
 };
 
 /* =========================
-   CHECK (REAL PASTE COUNT FIXED)
+   CHECK (REAL PASTE RESULT)
 ========================= */
 checkBtn.onclick = async () => {
 
-setStatus("Checking... 🔍");
+const r = lastPasteResult;
 
-try {
+if (!r.total) {
+    setStatus("No paste data ❌");
+    return;
+}
 
-await Excel.run(async (context) => {
+const missing = r.total - r.written;
 
-    const sheet =
-        context.workbook.worksheets.getActiveWorksheet();
+if (r.errors > 0 || missing > 0) {
 
-    const selected =
-        context.workbook.getSelectedRange();
+    setStatus(
+        `⚠️ Written: ${r.written} | Missing: ${missing} | Errors: ${r.errors}`
+    );
 
-    selected.load("rowIndex,columnIndex");
+} else {
 
-    await context.sync();
-
-    const startRow = selected.rowIndex;
-    const col = selected.columnIndex;
-
-    const count = lastSourceValues.length || 0;
-
-    if (count === 0) {
-        setStatus("No source data ❌");
-        return;
-    }
-
-    const checkRange =
-        sheet.getRangeByIndexes(
-            startRow,
-            col,
-            count,
-            1
-        );
-
-    checkRange.load("values");
-
-    await context.sync();
-
-    const flat = checkRange.values.flat();
-
-    let pastedCount = 0;
-    let emptyCount = 0;
-
-    for (const v of flat) {
-
-        const val = String(v ?? "").trim();
-
-        if (val === "") {
-            emptyCount++;
-        } else {
-            pastedCount++;
-        }
-    }
-
-    const missing =
-        count - pastedCount;
-
-    if (missing > 0) {
-
-        setStatus(
-            `⚠️ Missing: ${missing} | Pasted: ${pastedCount} | Empty: ${emptyCount}`
-        );
-
-    } else {
-
-        setStatus(
-            `✅ OK | Pasted: ${pastedCount} | Empty: ${emptyCount}`
-        );
-    }
-
-});
-
-} catch (err) {
-
-    setStatus("Check Error ❌ " + err.message);
+    setStatus(
+        `✅ OK | Written: ${r.written} / ${r.total}`
+    );
 }
 
 };
